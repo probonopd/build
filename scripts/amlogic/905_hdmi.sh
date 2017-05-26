@@ -47,16 +47,6 @@ echo 0 > /sys/class/graphics/fb0/blank
 echo -en "\033[?25h"
 echo 1 > /sys/devices/virtual/graphics/fbcon/cursor_blink
 
-#for part in /sys/block/*/queue/add_random; do
-#  echo 0 > "$part"
-#done
-
-#echo 1536000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-
-#su -c 'echo "audio_on" > /sys/class/amhdmitx/amhdmitx0/config'
-
-#docker daemon
-
 #/etc/webmin/start &
 
 su -c 'hciattach /dev/ttyS1 any'

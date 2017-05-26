@@ -74,7 +74,7 @@ echo "Copy fstab amlogics905x_init.sh"
 
 rm $DIR_INSTALL/etc/fstab
 cp -a /root/fstab $DIR_INSTALL/etc
-cp -a /boot/amlogics905x_init.sh $DIR_INSTALL/boot
+cp -a /boot/hdmi.sh $DIR_INSTALL/boot
 
 rm $DIR_INSTALL/root/install.sh
 rm $DIR_INSTALL/root/fstab

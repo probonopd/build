@@ -114,7 +114,7 @@ EXT='conf'
 if [[ -z $BOARD ]]; then
 	WIP_STATE='supported'
 	WIP_BUTTON='WIP'
-	[[ -n $(find $SRC/lib/config/boards/ -name '*.wip' -print -quit) ]] && DIALOG_EXTRA="--extra-button"
+	[[ -n $(find $SRC/lib/config/boards/ -name '*.wip' -print -quit) && $EXPERT = "yes" ]] && DIALOG_EXTRA="--extra-button"
 	while true; do
 		options=()
 		for board in $SRC/lib/config/boards/*.${EXT}; do
@@ -225,12 +225,6 @@ fi
 
 compile_sunxi_tools
 
-# Here we want to rename LINUXFAMILY from sun4i, sun5i, etc for next and dev branches
-# except for sun8i-dev which is separate from sunxi-dev
-if [[ $LINUXFAMILY == sun*i && $BRANCH != default ]]; then
-    [[ ! ( $LINUXFAMILY == sun8i && $BRANCH == dev ) ]] && LINUXFAMILY="sunxi"
-fi
-
 # define package names
 DEB_BRANCH=${BRANCH//default}
 # if not empty, append hyphen
@@ -260,8 +254,7 @@ VER=$(dpkg --info $DEST/debs/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb | grep Des
 VER="${VER/-$LINUXFAMILY/}"
 
 # create board support package
-# TODO: check and remove last part of the condition (! -d)
-[[ -n $RELEASE && ! -f $DEST/debs/$RELEASE/${CHOSEN_ROOTFS}_${REVISION}_${ARCH}.deb && ! -d $DEST/debs/$RELEASE/${CHOSEN_ROOTFS}_${REVISION}_${ARCH} ]] && create_board_package
+[[ -n $RELEASE && ! -f $DEST/debs/$RELEASE/${CHOSEN_ROOTFS}_${REVISION}_${ARCH}.deb ]] && create_board_package
 
 # build additional packages
 [[ $EXTERNAL_NEW == compile ]] && chroot_build_packages

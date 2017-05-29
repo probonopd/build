@@ -26,6 +26,8 @@ if test -e ${devtype} 0 ${prefix}armbianEnv.txt; then
 	env import -t ${load_addr} ${filesize}
 fi
 
+if test "${logo}" = "disabled"; then setenv logo "logo.nologo"; fi
+
 if test "${console}" = "display" || test "${console}" = "both"; then setenv consoleargs "console=tty1"; fi
 if test "${console}" = "serial" || test "${console}" = "both"; then setenv consoleargs "${consoleargs} console=ttyS0,115200"; fi
 
@@ -45,7 +47,7 @@ if test -e ${devtype} 0 "${prefix}.next"; then
 	echo "Found mainline kernel configuration"
 	load ${devtype} 0 ${fdt_addr_r} ${prefix}dtb/${fdtfile}
 	fdt addr ${fdt_addr_r}
-	fdt resize
+	fdt resize 65536
 	for overlay_file in ${overlays}; do
 		if load ${devtype} 0 ${load_addr} ${prefix}dtb/overlay/${overlay_prefix}-${overlay_file}.dtbo; then
 			echo "Applying kernel provided DT overlay ${overlay_prefix}-${overlay_file}.dtbo"
@@ -67,7 +69,7 @@ if test -e ${devtype} 0 "${prefix}.next"; then
 			source ${load_addr}
 		fi
 		if test -e ${devtype} 0 ${prefix}fixup.scr; then
-			load ${devtype} 0 ${load_addr} fixup.scr
+			load ${devtype} 0 ${load_addr} ${prefix}fixup.scr
 			echo "Applying user provided fixup script (fixup.scr)"
 			source ${load_addr}
 		fi

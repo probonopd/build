@@ -3,14 +3,19 @@ BOOTDIR=$MAINLINE_UBOOT_DIR
 BOOTBRANCH=$MAINLINE_UBOOT_BRANCH
 BOOTSCRIPT="boot-sunxi.cmd:boot.cmd"
 BOOTENV_FILE='sunxi-default.txt'
-BOOTPATCHDIR="u-boot-sunxi"
+BOOTPATCHDIR='u-boot-sunxi'
 
 UBOOT_TARGET_MAP=';;u-boot-sunxi-with-spl.bin'
 
-UBOOT_ALT_GCC='> 6.1'
+UBOOT_USE_GCC='> 6.0'
+UBOOT_FW_ENV='0x88000,0x20000' # /etc/fw_env.config offset and env size
 
 HAS_UUID_SUPPORT=yes
 BOOTDELAY=0
+
+# Here we want to rename LINUXFAMILY from sun4i, sun5i, etc for next and dev branches
+# except for sun8i-dev which is separate from sunxi-dev
+[[ $BRANCH != default && ! ( $LINUXFAMILY == sun8i && $BRANCH == dev ) ]] && LINUXFAMILY=sunxi
 
 case $BRANCH in
 	default)
@@ -22,15 +27,15 @@ case $BRANCH in
 	KERNELBRANCH=$MAINLINE_KERNEL_BRANCH
 	KERNELDIR=$MAINLINE_KERNEL_DIR
 
-	GOVERNOR=schedutil
+	GOVERNOR=ondemand
 
-	KERNEL_ALT_GCC='> 6.1'
+	KERNEL_USE_GCC='> 6.0'
 	;;
 
 	dev)
-	GOVERNOR=schedutil
+	GOVERNOR=ondemand
 
-	KERNEL_ALT_GCC='> 6.1'
+	KERNEL_USE_GCC='> 6.0'
 	;;
 esac
 

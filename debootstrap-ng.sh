@@ -38,7 +38,7 @@ debootstrap_ng()
 	# CLI needs ~1.2GiB+ (Xenial CLI), Desktop - ~2.2GiB+ (Xenial Desktop w/o HW acceleration)
 	# calculate and set tmpfs mount to use 2/3 of available RAM
 	local phymem=$(( $(awk '/MemTotal/ {print $2}' /proc/meminfo) / 1024 * 2 / 3 )) # MiB
-	if [[ $BUILD_DESKTOP == yes ]]; then local tmpfs_max_size=3000; else local tmpfs_max_size=1500; fi # MiB
+	if [[ $BUILD_DESKTOP == yes ]]; then local tmpfs_max_size=3200; else local tmpfs_max_size=1500; fi # MiB
 	if [[ $FORCE_USE_RAMDISK == no ]]; then	local use_tmpfs=no
 	elif [[ $FORCE_USE_RAMDISK == yes || $phymem -gt $tmpfs_max_size ]]; then
 		local use_tmpfs=yes
@@ -253,12 +253,8 @@ prepare_partitions()
 	display_alert "Preparing image file for rootfs" "$BOARD $RELEASE" "info"
 
 	# possible partition combinations
-	# ext4 root only (BOOTSIZE == 0 && ROOTFS_TYPE == ext4)
-	# ext4 boot + non-ext4 local root (BOOTSIZE == 0; ROOTFS_TYPE != ext4 or nfs)
-	# fat32 boot + ext4 root (BOOTSIZE > 0 && ROOTFS_TYPE == ext4)
-	# fat32 boot + non-ext4 local root (BOOTSIZE > 0; ROOTFS_TYPE != ext4 or nfs)
-	# ext4 boot + NFS root (BOOTSIZE == 0; ROOTFS_TYPE == nfs)
-	# fat32 boot + NFS root (BOOTSIZE > 0; ROOTFS_TYPE == nfs)
+	# /boot: none, ext4, ext2, fat (BOOTFS_TYPE)
+	# root: ext4, btrfs, f2fs, nfs (ROOTFS_TYPE)
 
 	# declare makes local variables by default if used inside a function
 	# NOTE: mountopts string should always start with comma if not empty
@@ -268,6 +264,7 @@ prepare_partitions()
 	declare -A parttype mkopts mkfs mountopts
 
 	parttype[ext4]=ext4
+	parttype[ext2]=ext2
 	parttype[fat]=fat16
 	parttype[f2fs]=ext4 # not a copy-paste error
 	parttype[btrfs]=btrfs
@@ -282,21 +279,48 @@ prepare_partitions()
 	fi
 
 	mkopts[fat]='-n BOOT'
+	mkopts[ext2]='-q'
 	# mkopts[f2fs] is empty
 	# mkopts[btrfs] is empty
 	# mkopts[nfs] is empty
 
 	mkfs[ext4]=ext4
+	mkfs[ext2]=ext2
 	mkfs[fat]=vfat
 	mkfs[f2fs]=f2fs
 	mkfs[btrfs]=btrfs
 	# mkfs[nfs] is empty
 
 	mountopts[ext4]=',commit=600,errors=remount-ro'
+	# mountopts[ext2] is empty
 	# mountopts[fat] is empty
 	# mountopts[f2fs] is empty
 	# mountopts[btrfs] is empty
 	# mountopts[nfs] is empty
+
+	# stage: determine partition configuration
+	if [[ -n $BOOTFS_TYPE ]]; then
+		# 2 partition setup with forced /boot type
+		local bootfs=$BOOTFS_TYPE
+		local bootpart=1
+		local rootpart=2
+		[[ -z $BOOTSIZE || $BOOTSIZE -le 8 ]] && BOOTSIZE=64 # MiB
+	elif [[ $ROOTFS_TYPE != ext4 && $ROOTFS_TYPE != nfs ]]; then
+		# 2 partition setup for non-ext4 local root
+		local bootfs=ext4
+		local bootpart=1
+		local rootpart=2
+		[[ -z $BOOTSIZE || $BOOTSIZE -le 8 ]] && BOOTSIZE=64 # MiB
+	elif [[ $ROOTFS_TYPE == nfs ]]; then
+		# single partition ext4 /boot, no root
+		local bootfs=ext4
+		local bootpart=1
+		[[ -z $BOOTSIZE || $BOOTSIZE -le 8 ]] && BOOTSIZE=64 # MiB, For cleanup processing only
+	else
+		# single partition ext4 root
+		local rootpart=1
+		BOOTSIZE=0
+	fi
 
 	# stage: calculate rootfs size
 	local rootfs_size=$(du -sm $CACHEDIR/$SDCARD/ | cut -f1) # MiB
@@ -318,28 +342,6 @@ prepare_partitions()
 	# stage: create blank image
 	display_alert "Creating blank image for rootfs" "$sdsize MiB" "info"
 	dd if=/dev/zero bs=1M status=none count=$sdsize | pv -p -b -r -s $(( $sdsize * 1024 * 1024 )) | dd status=none of=$CACHEDIR/${SDCARD}.raw
-
-	# stage: determine partition configuration
-	if [[ $BOOTSIZE != 0 ]]; then
-		# fat32 /boot + ext4 or other root, deprecated
-		local bootfs=fat
-		local bootpart=1
-		local rootpart=2
-	elif [[ $ROOTFS_TYPE != ext4 && $ROOTFS_TYPE != nfs ]]; then
-		# ext4 /boot + non-ext4 root
-		BOOTSIZE=64 # MiB
-		local bootfs=ext4
-		local bootpart=1
-		local rootpart=2
-	elif [[ $ROOTFS_TYPE == nfs ]]; then
-		# ext4 /boot, no root
-		BOOTSIZE=64 # For cleanup processing only
-		local bootfs=ext4
-		local bootpart=1
-	else
-		# ext4 root
-		local rootpart=1
-	fi
 
 	# stage: calculate boot partition size
 	local bootstart=$(($OFFSET * 2048))
@@ -418,6 +420,12 @@ prepare_partitions()
 			-e "s/rootfstype \"ext4\"/rootfstype \"$ROOTFS_TYPE\"/" $CACHEDIR/$SDCARD/boot/$bootscript_dst
 	fi
 
+	# if we have boot.ini = remove armbianEnv.txt and add UUID there if enabled
+	if [[ -f $CACHEDIR/$SDCARD/boot/boot.ini ]]; then
+		[[ $HAS_UUID_SUPPORT == yes ]] && sed -i 's/^setenv rootdev .*/setenv rootdev "'$rootfs'"/' $CACHEDIR/$SDCARD/boot/boot.ini
+		[[ -f $CACHEDIR/$SDCARD/boot/armbianEnv.txt ]] && rm $CACHEDIR/$SDCARD/boot/armbianEnv.txt
+	fi
+
 	# recompile .cmd to .scr if boot.cmd exists
 	[[ -f $CACHEDIR/$SDCARD/boot/boot.cmd ]] && \
 		mkimage -C none -A arm -T script -d $CACHEDIR/$SDCARD/boot/boot.cmd $CACHEDIR/$SDCARD/boot/boot.scr > /dev/null 2>&1
@@ -471,6 +479,19 @@ create_image()
 	mkdir -p $CACHEDIR/$DESTIMG
 	cp $CACHEDIR/$SDCARD/etc/armbian.txt $CACHEDIR/$DESTIMG
 	mv $CACHEDIR/${SDCARD}.raw $CACHEDIR/$DESTIMG/${version}.img
+
+	if [[ $COMPRESS_OUTPUTIMAGE == yes && $BUILD_ALL != yes ]]; then
+		# compress image
+		cd $CACHEDIR/$DESTIMG
+        	sha256sum -b ${version}.img > sha256sum.sha
+	        if [[ -n $GPG_PASS ]]; then
+        	        echo $GPG_PASS | gpg --passphrase-fd 0 --armor --detach-sign --batch --yes ${version}.img
+                	echo $GPG_PASS | gpg --passphrase-fd 0 --armor --detach-sign --batch --yes armbian.txt
+	        fi
+			display_alert "Compressing" "$DEST/images/${version}.img" "info"
+	        7za a -t7z -bd -m0=lzma2 -mx=3 -mfb=64 -md=32m -ms=on $DEST/images/${version}.7z ${version}.img armbian.txt *.asc sha256sum.sha >/dev/null 2>&1
+	fi
+	#
 	if [[ $BUILD_ALL != yes ]]; then
 		mv $CACHEDIR/$DESTIMG/${version}.img $DEST/images/${version}.img
 		rm -rf $CACHEDIR/$DESTIMG

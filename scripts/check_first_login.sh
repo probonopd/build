@@ -87,44 +87,47 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 		fi
 	fi
 
-		# check whether desktop environment has to be considered
-#		if [ -f /etc/init.d/nodm ] ; then
-#			sed -i "s/NODM_USER=\(.*\)/NODM_USER=${RealUserName}/" /etc/default/nodm
-#			sed -i "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=true/g" /etc/default/nodm
-#			if [[ -z $ConfigureDisplay || $ConfigureDisplay == n || $ConfigureDisplay == N ]]; then
-#				echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
-#				sleep 3
-#				service nodm stop
-#				sleep 1
-#				service nodm start
-#			fi
-#		fi
+	tar -xf /usr/lib/libmali.tar.gz -C /usr
+	sync
+	sleep 1
+	ldconfig
+
+	# check whether desktop environment has to be considered
+	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
+		# enable splash
+		# [[ -f /etc/systemd/system/desktop-splash.service ]] && systemctl --no-reload enable desktop-splash.service >/dev/null 2>&1 && service desktop-splash restart
+		sed -i "s/NODM_USER=\(.*\)/NODM_USER=${RealUserName}/" /etc/default/nodm
+		sed -i "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=true/g" /etc/default/nodm
+		if [ -z "$ConfigureDisplay" ] || [ "$ConfigureDisplay" = "n" ] || [ "$ConfigureDisplay" = "N" ]; then
+			echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
+			sleep 3
+			service nodm stop
+			sleep 1
+			service nodm start
+		fi
+	fi
+fi
 
 		# autologin for Desktop
-		if [ -f /root/autologin ] ; then
-			touch /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-			echo "[Service]" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-			echo "ExecStart=" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-			echo "ExecStart=-/sbin/agetty --autologin "${RealUserName}" --noclear %I 38400 linux" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-#			echo 'sleep 2' >> /home/${RealUserName}/.bashrc
-			echo " " >> /home/${RealUserName}/.bashrc
-			echo '[[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx' >> /home/${RealUserName}/.bashrc
-			echo -e "Sucesfuul setup Users. Reboot system.\n"
+#		if [ -f /root/autologin ] ; then
+#			touch /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
+#			echo "[Service]" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
+#			echo "ExecStart=" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
+#			echo "ExecStart=-/sbin/agetty --autologin "${RealUserName}" --noclear %I 38400 linux" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
+###			echo 'sleep 2' >> /home/${RealUserName}/.bashrc
+#			echo " " >> /home/${RealUserName}/.bashrc
+#			echo '[[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx' >> /home/${RealUserName}/.bashrc
 
-			touch /home/${RealUserName}/.xinitrc_example
-			echo '#exec mate-session' >> /home/${RealUserName}/.xinitrc_example
-			echo '#exec startxfce4' >> /home/${RealUserName}/.xinitrc_example
-			echo '#exec startlxde' >> /home/${RealUserName}/.xinitrc_example
-			echo '#exec startlxqt' >> /home/${RealUserName}/.xinitrc_example
-			echo '#exec icewm-session' >> /home/${RealUserName}/.xinitrc_example
+#			touch /home/${RealUserName}/.xinitrc_example
+#			echo '#exec mate-session' >> /home/${RealUserName}/.xinitrc_example
+#			echo '#exec startxfce4' >> /home/${RealUserName}/.xinitrc_example
+#			echo '#exec startlxde' >> /home/${RealUserName}/.xinitrc_example
+#			echo '#exec startlxqt' >> /home/${RealUserName}/.xinitrc_example
+#			echo '#exec icewm-session' >> /home/${RealUserName}/.xinitrc_example
 
-			tar -xf /usr/lib/libmali.tar.gz -C /usr
-			sync
-			sleep 2
-			ldconfig
 
-			sync
-			sleep 1
-			reboot
-		fi
-fi
+#			echo -e "Sucesfuul setup. Reboot system.\n"
+#			sleep 3
+#			reboot
+#		fi
+#fi

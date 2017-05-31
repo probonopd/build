@@ -57,7 +57,7 @@ install_desktop ()
 	fi
 
 	# Disable desktop mode autostart for now to enforce creation of normal user account
-#	sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i $CACHEDIR/$SDCARD/etc/default/nodm
+	sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i $CACHEDIR/$SDCARD/etc/default/nodm
 
 	# Compile Turbo Frame buffer for sunxi
 	if [[ $LINUXFAMILY == sun* && $BRANCH == default ]]; then
@@ -73,9 +73,15 @@ install_desktop ()
 		fi
 	fi
 
+	# set default wallpaper XFCE
+	if [[ $DE == "xfce" ]]; then
+#		sed -i 's/\(backgrounds\/xfce\/*\)[^ ]*/\armbian01.jpg\"\/>/' $CACHEDIR/$SDCARD/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
+#		sed -i 's/\(backgrounds\/xfce\/*\)[^ ]*/\armbian01.jpg\"\/>/' $CACHEDIR/$SDCARD/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
+	fi
+
 	cp $SRC/lib/scripts/amlogic/Test.mp4 $CACHEDIR/$SDCARD/etc/skel/Desktop/Test.mp4
 	cp $SRC/lib/scripts/amlogic/Test7.mp4 $CACHEDIR/$SDCARD/etc/skel/Desktop/Test1.mp4
-	cp $SRC/lib/scripts/amlogic/autologin $CACHEDIR/$SDCARD/root/autologin
+#	cp $SRC/lib/scripts/amlogic/autologin $CACHEDIR/$SDCARD/root/autologin
 
 	umount $CACHEDIR/$SDCARD/tmp/bin && rm -rf $CACHEDIR/$SDCARD/tmp/bin
 }

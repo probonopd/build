@@ -73,15 +73,12 @@ install_desktop ()
 		fi
 	fi
 
-	# set default wallpaper XFCE
-	if [[ $DE == "xfce" ]]; then
-#		sed -i 's/\(backgrounds\/xfce\/*\)[^ ]*/\armbian01.jpg\"\/>/' $CACHEDIR/$SDCARD/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
-#		sed -i 's/\(backgrounds\/xfce\/*\)[^ ]*/\armbian01.jpg\"\/>/' $CACHEDIR/$SDCARD/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
-	fi
-
-	cp $SRC/lib/scripts/amlogic/Test.mp4 $CACHEDIR/$SDCARD/etc/skel/Desktop/Test.mp4
-	cp $SRC/lib/scripts/amlogic/Test7.mp4 $CACHEDIR/$SDCARD/etc/skel/Desktop/Test1.mp4
+#	cp $SRC/lib/scripts/amlogic/Test.mp4 $CACHEDIR/$SDCARD/etc/skel/Desktop/Test.mp4
+#	cp $SRC/lib/scripts/amlogic/Test7.mp4 $CACHEDIR/$SDCARD/etc/skel/Desktop/Test1.mp4
 #	cp $SRC/lib/scripts/amlogic/autologin $CACHEDIR/$SDCARD/root/autologin
+	sed -e 's/exit 0//g' -i $CACHEDIR/$SDCARD/etc/rc.local
+	echo "su -c 'hciattach /dev/ttyS1 any'" >> $CACHEDIR/$SDCARD/etc/rc.local
+	echo "exit 0" >> $CACHEDIR/$SDCARD/etc/rc.local
 
 	umount $CACHEDIR/$SDCARD/tmp/bin && rm -rf $CACHEDIR/$SDCARD/tmp/bin
 }

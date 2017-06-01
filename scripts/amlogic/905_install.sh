@@ -34,21 +34,24 @@ mount -o rw $PART_ROOT $DIR_INSTALL
 cd /
 echo "Copy BIN"
 tar -cf - bin | (cd $DIR_INSTALL; tar -xpf -)
-echo "Create BOOT"
-mkdir -p $DIR_INSTALL/boot
-#tar -cf - boot | (cd $DIR_INSTALL; tar -xpf -)
-echo "Copy DEV"
-tar -cf - dev | (cd $DIR_INSTALL; tar -xpf -)
+echo "Copy BOOT"
+#mkdir -p $DIR_INSTALL/boot
+tar -cf - boot | (cd $DIR_INSTALL; tar -xpf -)
+echo "Create DEV"
+mkdir -p $DIR_INSTALL/dev
+#tar -cf - dev | (cd $DIR_INSTALL; tar -xpf -)
 echo "Copy ETC"
 tar -cf - etc | (cd $DIR_INSTALL; tar -xpf -)
 echo "Copy HOME"
 tar -cf - home | (cd $DIR_INSTALL; tar -xpf -)
 echo "Copy LIB"
 tar -cf - lib | (cd $DIR_INSTALL; tar -xpf -)
-echo "Copy MEDIA"
-tar -cf - media | (cd $DIR_INSTALL; tar -xpf -)
-echo "Copy MNT"
-tar -cf - mnt | (cd $DIR_INSTALL; tar -xpf -)
+echo "Create MEDIA"
+mkdir -p $DIR_INSTALL/media
+#tar -cf - media | (cd $DIR_INSTALL; tar -xpf -)
+echo "Create MNT"
+mkdir -p $DIR_INSTALL/mnt
+#tar -cf - mnt | (cd $DIR_INSTALL; tar -xpf -)
 echo "Copy OPT"
 tar -cf - opt | (cd $DIR_INSTALL; tar -xpf -)
 echo "Create PROC"
@@ -59,6 +62,8 @@ echo "Create RUN"
 mkdir -p $DIR_INSTALL/run
 echo "Copy SBIN"
 tar -cf - sbin | (cd $DIR_INSTALL; tar -xpf -)
+echo "Copy SELINUX"
+tar -cf - selinux | (cd $DIR_INSTALL; tar -xpf -)
 echo "Copy SRV"
 tar -cf - srv | (cd $DIR_INSTALL; tar -xpf -)
 echo "Create SYS"
@@ -70,11 +75,11 @@ tar -cf - usr | (cd $DIR_INSTALL; tar -xpf -)
 echo "Copy VAR"
 tar -cf - var | (cd $DIR_INSTALL; tar -xpf -)
 
-echo "Copy fstab amlogics905x_init.sh"
+echo "Copy fstab"
 
 rm $DIR_INSTALL/etc/fstab
 cp -a /root/fstab $DIR_INSTALL/etc
-cp -a /boot/hdmi.sh $DIR_INSTALL/boot
+#cp -a /boot/hdmi.sh $DIR_INSTALL/boot
 
 rm $DIR_INSTALL/root/install.sh
 rm $DIR_INSTALL/root/fstab

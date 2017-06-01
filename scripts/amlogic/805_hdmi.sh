@@ -29,3 +29,6 @@ echo 0 > /sys/class/graphics/fb0/blank
 
 # Blank fb1 to prevent static noise
 echo 1 > /sys/class/graphics/fb1/blank
+
+#su -c 'hciattach /dev/ttyS1 any'
+

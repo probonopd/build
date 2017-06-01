@@ -44,9 +44,9 @@ echo 0 > /sys/class/graphics/fb0/blank
 # Blank fb1 to prevent static noise
 #echo 0 > /sys/class/graphics/fb1/blank
 
-echo -en "\033[?25h"
+#echo -en "\033[?25h"
 echo 1 > /sys/devices/virtual/graphics/fbcon/cursor_blink
 
 #/etc/webmin/start &
 
-su -c 'hciattach /dev/ttyS1 any'
+#su -c 'hciattach /dev/ttyS1 any'

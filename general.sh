@@ -140,6 +140,9 @@ create_sources_list()
 
 	deb http://security.debian.org/ ${release}/updates main contrib non-free
 	#deb-src http://security.debian.org/ ${release}/updates main contrib non-free
+
+	deb http://ftp.de.debian.org/debian testing main
+
 	EOF
 	;;
 

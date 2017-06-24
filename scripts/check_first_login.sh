@@ -45,6 +45,9 @@ add_user()
 	# fix for gksu in Xenial
 	touch /home/$RealUserName/.Xauthority
 	chown $RealUserName:$RealUserName /home/$RealUserName/.Xauthority
+
+	usermod -a -G audio,video,disk,input,tty $RealUserName
+
 	RealName="$(awk -F":" "/^${RealUserName}:/ {print \$5}" </etc/passwd | cut -d',' -f1)"
 	[ -z "$RealName" ] && RealName=$RealUserName
 	echo -e "\nDear ${RealName}, your account ${RealUserName} has been created and is sudo enabled."
@@ -87,10 +90,12 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 		fi
 	fi
 
-	tar -xf /usr/lib/libmali.tar.gz -C /usr
-	sync
-	sleep 1
-	ldconfig
+#	if [ -f /usr/lib/libmali.tar.gz ]; then
+#		tar -xf /usr/lib/libmali.tar.gz -C /usr
+#		ldconfig
+#		sync
+#		sleep 1
+#	fi
 
 	# check whether desktop environment has to be considered
 	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
@@ -124,7 +129,6 @@ fi
 #			echo '#exec startlxde' >> /home/${RealUserName}/.xinitrc_example
 #			echo '#exec startlxqt' >> /home/${RealUserName}/.xinitrc_example
 #			echo '#exec icewm-session' >> /home/${RealUserName}/.xinitrc_example
-
 
 #			echo -e "Sucesfuul setup. Reboot system.\n"
 #			sleep 3

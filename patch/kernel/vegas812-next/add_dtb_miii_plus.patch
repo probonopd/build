@@ -1,7 +1,7 @@
 new file mode 100644
 --- /dev/null
 +++ ./arch/arm/boot/dts/meson8m2-mxiii-plus.dts
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,271 @@
 +/*
 + * Copyright (c) 2017 Martin Blumenstingl <martin.blumenstingl@googlemail.com>.
 + *
@@ -38,6 +38,11 @@ new file mode 100644
 +			linux,code = <KEY_FN>;
 +			press-threshold-microvolt = <10000>;
 +		};
++	};
++
++	iio-hwmon {
++		compatible = "iio-hwmon";
++		io-channels = <&saradc 8>;
 +	};
 +
 +	pwmleds {
@@ -96,17 +101,22 @@ new file mode 100644
 +
 +&ethmac {
 +	status = "okay";
++
 +	pinctrl-0 = <&eth_pins>;
 +	pinctrl-names = "default";
++
 +	phy-handle = <&eth_phy0>;
 +	phy-mode = "rgmii";
++
 +	snps,reset-gpio = <&gpio GPIOH_4 0>;
 +	snps,reset-delays-us = <0 10000 1000000>;
 +	snps,reset-active-low;
++
 +	mdio {
 +		compatible = "snps,dwmac-mdio";
 +		#address-cells = <1>;
 +		#size-cells = <0>;
++
 +		eth_phy0: ethernet-phy@0 {
 +			/* IC Plus IP101GR (0x02430c54) */
 +			reg = <0>;
@@ -207,6 +217,7 @@ new file mode 100644
 +
 +	/* Wireless SDIO Module */
 +	slot@0 {
++		compatible = "mmc-slot";
 +		reg = <0>;
 +		status = "okay";
 +
@@ -223,6 +234,7 @@ new file mode 100644
 +
 +	/* SD card */
 +	slot@1 {
++		compatible = "mmc-slot";
 +		reg = <1>;
 +		status = "okay";
 +

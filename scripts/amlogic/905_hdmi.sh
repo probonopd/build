@@ -3,8 +3,8 @@
 #bpp=32
 bpp=24
 
-#mode=1080p60hz
-mode=720p60hz
+mode=1080p60hz
+#mode=720p60hz
 
 HPD_STATE=/sys/class/amhdmitx/amhdmitx0/hpd_state
 DISP_CAP=/sys/class/amhdmitx/amhdmitx0/disp_cap
@@ -44,8 +44,7 @@ echo 0 > /sys/class/graphics/fb0/blank
 # Blank fb1 to prevent static noise
 #echo 0 > /sys/class/graphics/fb1/blank
 
-#echo -en "\033[?25h"
-echo 1 > /sys/devices/virtual/graphics/fbcon/cursor_blink
+echo 0 > /sys/devices/virtual/graphics/fbcon/cursor_blink
 
 #/etc/webmin/start &
 

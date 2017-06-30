@@ -143,6 +143,9 @@ case "$1" in
 
 	# disable itself
 	[[ ! -f /var/run/resize2fs-reboot ]] && systemctl disable resize2fs
+
+	systemctl stop lightdm
+
 	exit 0
 	;;
 

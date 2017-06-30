@@ -8,3 +8,7 @@ SUBSYSTEM=="meson-gpiomem", GROUP="sys", MODE="0660"
 
 # CEC Compat
 KERNEL=="cec", SYMLINK+="aocec"
+
+# mali
+KERNEL=="mali*",SUBSYSTEM=="misc",MODE="0777"
+KERNEL=="ump",SUBSYSTEM=="ump",MODE="0777"

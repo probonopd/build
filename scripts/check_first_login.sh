@@ -70,7 +70,7 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 		echo -e "\nIt is provided \e[0;31mAS IS\x1B[0m with \e[0;31mNO WARRANTY\x1B[0m and \e[0;31mNO END USER SUPPORT\x1B[0m.\n"
 	fi
 	echo "Creating a new user account. Press <Ctrl-C> to abort"
-	[ -f "/etc/init.d/nodm" ] && echo "Desktop environment will not be enabled if you abort the new user creation"
+#	[ -f "/etc/init.d/nodm" ] && echo "Desktop environment will not be enabled if you abort the new user creation"
 	trap check_abort INT
 	while [ -f "/root/.not_logged_in_yet" ]; do
 		add_user
@@ -98,19 +98,23 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 #	fi
 
 	# check whether desktop environment has to be considered
-	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
-		# enable splash
-		# [[ -f /etc/systemd/system/desktop-splash.service ]] && systemctl --no-reload enable desktop-splash.service >/dev/null 2>&1 && service desktop-splash restart
-		sed -i "s/NODM_USER=\(.*\)/NODM_USER=${RealUserName}/" /etc/default/nodm
-		sed -i "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=true/g" /etc/default/nodm
-		if [ -z "$ConfigureDisplay" ] || [ "$ConfigureDisplay" = "n" ] || [ "$ConfigureDisplay" = "N" ]; then
-			echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
-			sleep 3
-			service nodm stop
-			sleep 1
-			service nodm start
-		fi
-	fi
+#	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
+#		# enable splash
+#		# [[ -f /etc/systemd/system/desktop-splash.service ]] && systemctl --no-reload enable desktop-splash.service >/dev/null 2>&1 && service desktop-splash restart
+#		sed -i "s/NODM_USER=\(.*\)/NODM_USER=${RealUserName}/" /etc/default/nodm
+#		sed -i "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=true/g" /etc/default/nodm
+#		if [ -z "$ConfigureDisplay" ] || [ "$ConfigureDisplay" = "n" ] || [ "$ConfigureDisplay" = "N" ]; then
+#			echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
+#			sleep 3
+#			service nodm stop
+#			sleep 1
+#			service nodm start
+#		fi
+#	fi
+	echo -e "Sucesfuul setup. Reboot system.\n"
+	sleep 3
+	reboot
+
 fi
 
 		# autologin for Desktop

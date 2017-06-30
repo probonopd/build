@@ -52,12 +52,12 @@ install_desktop ()
 	fi
 
 	# Disable Pulseaudio timer scheduling which does not work with sndhdmi driver
-	if [[ -f ${CACHEDIR}/$SDCARD/etc/pulse/default.pa ]]; then
-		sed "s/load-module module-udev-detect$/& tsched=0/g" -i  $CACHEDIR/$SDCARD/etc/pulse/default.pa
-	fi
+#	if [[ -f ${CACHEDIR}/$SDCARD/etc/pulse/default.pa ]]; then
+#		sed "s/load-module module-udev-detect$/& tsched=0/g" -i  $CACHEDIR/$SDCARD/etc/pulse/default.pa
+#	fi
 
 	# Disable desktop mode autostart for now to enforce creation of normal user account
-	sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i $CACHEDIR/$SDCARD/etc/default/nodm
+#	sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i $CACHEDIR/$SDCARD/etc/default/nodm
 
 	# Compile Turbo Frame buffer for sunxi
 	if [[ $LINUXFAMILY == sun* && $BRANCH == default ]]; then

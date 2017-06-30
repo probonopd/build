@@ -27,6 +27,8 @@ do_firstrun_automated_user_configuration()
 	# - See /boot/armbian_first_run.txt for full list of available variables
 	# - Variable names here must here must match ones in config/armbian_first_run.txt
 
+	systemctl stop lightdm
+
 	#-----------------------------------------------------------------------------
 	#Config FP
 	local fp_config='/boot/armbian_first_run.txt'

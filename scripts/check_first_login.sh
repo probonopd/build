@@ -46,7 +46,7 @@ add_user()
 	touch /home/$RealUserName/.Xauthority
 	chown $RealUserName:$RealUserName /home/$RealUserName/.Xauthority
 
-	usermod -a -G audio,video,disk,input,tty $RealUserName
+	usermod -a -G audio,video,disk,input,tty,root,users,games $RealUserName
 
 	RealName="$(awk -F":" "/^${RealUserName}:/ {print \$5}" </etc/passwd | cut -d',' -f1)"
 	[ -z "$RealName" ] && RealName=$RealUserName
@@ -90,13 +90,6 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 		fi
 	fi
 
-#	if [ -f /usr/lib/libmali.tar.gz ]; then
-#		tar -xf /usr/lib/libmali.tar.gz -C /usr
-#		ldconfig
-#		sync
-#		sleep 1
-#	fi
-
 	# check whether desktop environment has to be considered
 #	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
 #		# enable splash
@@ -111,31 +104,9 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 #			service nodm start
 #		fi
 #	fi
+	sync
 	echo -e "Sucesfuul setup. Reboot system.\n"
 	sleep 3
 	reboot
 
 fi
-
-		# autologin for Desktop
-#		if [ -f /root/autologin ] ; then
-#			touch /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-#			echo "[Service]" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-#			echo "ExecStart=" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-#			echo "ExecStart=-/sbin/agetty --autologin "${RealUserName}" --noclear %I 38400 linux" >> /etc/systemd/system/getty@tty1.service.d/20-autologin.conf
-###			echo 'sleep 2' >> /home/${RealUserName}/.bashrc
-#			echo " " >> /home/${RealUserName}/.bashrc
-#			echo '[[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx' >> /home/${RealUserName}/.bashrc
-
-#			touch /home/${RealUserName}/.xinitrc_example
-#			echo '#exec mate-session' >> /home/${RealUserName}/.xinitrc_example
-#			echo '#exec startxfce4' >> /home/${RealUserName}/.xinitrc_example
-#			echo '#exec startlxde' >> /home/${RealUserName}/.xinitrc_example
-#			echo '#exec startlxqt' >> /home/${RealUserName}/.xinitrc_example
-#			echo '#exec icewm-session' >> /home/${RealUserName}/.xinitrc_example
-
-#			echo -e "Sucesfuul setup. Reboot system.\n"
-#			sleep 3
-#			reboot
-#		fi
-#fi

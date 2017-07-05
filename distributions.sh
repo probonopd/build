@@ -96,6 +96,14 @@ install_common()
 	ff02::2     ip6-allrouters
 	EOF
 
+	# add hdmi init
+	if [[ $BOARD_NAME == "S9xxx" ]]; then
+		display_alert "Hook initramfs" "$BOARD_NAME" "info"
+		install -m 755 $SRC/lib/scripts/amlogic/905_hdmi $CACHEDIR/$SDCARD/usr/share/initramfs-tools/hooks/hdmi
+		install -m 755 $SRC/lib/scripts/amlogic/905_init $CACHEDIR/$SDCARD/usr/share/initramfs-tools/init
+		install -m 755 $SRC/lib/scripts/amlogic/905_hdmi_init.sh $CACHEDIR/$SDCARD/bin/hdmi_init.sh
+	fi
+
 	display_alert "Installing kernel" "$CHOSEN_KERNEL" "info"
 	chroot $CACHEDIR/$SDCARD /bin/bash -c "dpkg -i /tmp/debs/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
 
@@ -176,6 +184,7 @@ install_common()
 	# to prevent creating swap file on NFS (needs specific kernel options)
 	# and f2fs/btrfs (not recommended or needs specific kernel options)
 	[[ $ROOTFS_TYPE != ext4 ]] && touch $CACHEDIR/$SDCARD/var/swap
+
 }
 
 install_distribution_specific()

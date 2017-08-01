@@ -121,7 +121,7 @@ PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-f
 	galculator hexchat gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl gksu bluetooth \
 	network-manager-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
 	paman pavumeter pulseaudio-module-gconf pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv gparted synaptic \
-	libreoffice-writer libreoffice-style-tango libreoffice-gtk policykit-1 fbi profile-sync-daemon lightdm"
+	libreoffice-writer libreoffice-style-tango policykit-1 fbi profile-sync-daemon lightdm"
 
 # add XFCE or MATE
 case $BUILD_DESKTOP_DE in
@@ -143,7 +143,7 @@ case $RELEASE in
 	;;
 	xenial)
 	PACKAGE_LIST_RELEASE="man-db wget nano linux-firmware"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser gnome-icon-theme-full tango-icon-theme language-selector-gnome paprefs numix-gtk-theme"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser gnome-icon-theme-full tango-icon-theme language-selector-gnome paprefs numix-gtk-theme libreoffice-gtk"
 	[[ $ARCH == armhf ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-utils ubuntu-mate-welcome mate-settings-daemon"
 	;;
 	stretch)

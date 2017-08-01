@@ -1,6 +1,7 @@
 --- a/arch/arm64/boot/dts/Makefile
 +++ b/arch/arm64/boot/dts/Makefile
-@@ -1,26 +1,4 @@
+@@ -1,28 +1,4 @@
+-dts-dirs += actions
 -dts-dirs += al
 -dts-dirs += allwinner
 -dts-dirs += altera
@@ -17,6 +18,7 @@
 -dts-dirs += mediatek
 -dts-dirs += nvidia
 -dts-dirs += qcom
+-dts-dirs += realtek
 -dts-dirs += renesas
 -dts-dirs += rockchip
 -dts-dirs += socionext

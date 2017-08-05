@@ -1,7 +1,7 @@
 new file mode 100644
 --- /dev/null
 +++ ./arch/arm/boot/dts/meson8m2-mxiii-plus.dts
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,292 @@
 +/*
 + * Copyright (c) 2017 Martin Blumenstingl <martin.blumenstingl@googlemail.com>.
 + *
@@ -21,6 +21,13 @@ new file mode 100644
 +
 +	aliases {
 +		serial0 = &uart_AO;
++		serial1 = &uart_A;
++		mmc0 = &sd_card_slot;
++		mmc1 = &sdio_wireless_slot;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
 +	};
 +
 +	memory {
@@ -216,10 +223,10 @@ new file mode 100644
 +	pinctrl-names = "default";
 +
 +	/* Wireless SDIO Module */
-+	slot@0 {
++	sdio_wireless_slot: slot@0 {
 +		compatible = "mmc-slot";
 +		reg = <0>;
-+		status = "okay";
++		status = "disabled";
 +
 +		bus-width = <4>;
 +		cap-mmc-highspeed;
@@ -233,7 +240,7 @@ new file mode 100644
 +	};
 +
 +	/* SD card */
-+	slot@1 {
++	sd_card_slot: slot@1 {
 +		compatible = "mmc-slot";
 +		reg = <1>;
 +		status = "okay";
@@ -248,6 +255,20 @@ new file mode 100644
 +		cd-inverted;
 +
 +		vmmc-supply = <&vcc_3v3>;
++	};
++};
++
++&uart_A {
++	status = "okay";
++	pinctrl-0 = <&uart_a1_pins>, <&uart_a1_cts_rts_pins>;
++	pinctrl-names = "default";
++	uart-has-rtscts;
++
++	bluetooth {
++		status = "disabled";
++		compatible = "realtek,rtl8723bs-bluetooth";
++		disable-gpios = <&gpio GPIOX_20 GPIO_ACTIVE_LOW>;
++		max-speed = <1500000>;
 +	};
 +};
 +

@@ -5,14 +5,25 @@ echo "Start copy system for DATA partition."
 mkdir -p /ddbr
 chmod 777 /ddbr
 
-IMAGE_KERNEL="/boot/linux.img"
+IMAGE_KERNEL="/boot/uImage"
+IMAGE_INITRD="/boot/initrd.img-3.10.99"
 PART_ROOT="/dev/data"
 DIR_INSTALL="/ddbr/install"
 IMAGE_DTB="/boot/dtb.img"
 
 
 if [ ! -f $IMAGE_KERNEL ] ; then
-    echo "Not linux.img.  STOP install !!!"
+    echo "Not KERNEL.  STOP install !!!"
+    return
+fi
+
+if [ ! -f $IMAGE_INITRD ] ; then
+    echo "Not INITRD.  STOP install !!!"
+    return
+fi
+
+if [ ! -f $IMAGE_DTB ] ; then
+    echo "Not DTB.  STOP install !!!"
     return
 fi
 
@@ -96,15 +107,18 @@ echo "*******************************************"
 echo "Done copy ROOTFS"
 echo "*******************************************"
 
-echo "Writing kernel image..."
-dd if="$IMAGE_KERNEL" of="/dev/boot" bs=64K status=none && sync
-echo "done."
+echo "Writing new kernel image..."
 
-if [ -f $IMAGE_DTB ] ; then
-    echo "Writing device tree image..."
-    dd if="$IMAGE_DTB" of="/dev/dtb" bs=262144 status=none && sync
-    echo "done."
-fi
+mkdir -p $DIR_INSTALL/aboot
+cd $DIR_INSTALL/aboot
+dd if=/dev/boot of=boot.backup.img
+abootimg -i /dev/boot > aboot.txt
+abootimg -x /dev/boot
+abootimg -u /dev/boot -k $IMAGE_KERNEL
+abootimg -u /dev/boot -r $IMAGE_INITRD
+abootimg -u /dev/boot -s $IMAGE_DTB
+
+echo "done."
 
 echo "Write env bootargs"
 /usr/sbin/fw_setenv initargs "root=/dev/data rootflags=data=writeback rw console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.repair=yes net.ifnames=0 mac=\${mac}"

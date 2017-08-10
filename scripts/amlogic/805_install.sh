@@ -5,8 +5,10 @@ echo "Start copy system for DATA partition."
 mkdir -p /ddbr
 chmod 777 /ddbr
 
+VER=`uname -r`
+
 IMAGE_KERNEL="/boot/uImage"
-IMAGE_INITRD="/boot/initrd.img-3.10.99"
+IMAGE_INITRD="/boot/initrd.img-$VER"
 PART_ROOT="/dev/data"
 DIR_INSTALL="/ddbr/install"
 IMAGE_DTB="/boot/dtb.img"
@@ -22,10 +24,6 @@ if [ ! -f $IMAGE_INITRD ] ; then
     return
 fi
 
-if [ ! -f $IMAGE_DTB ] ; then
-    echo "Not DTB.  STOP install !!!"
-    return
-fi
 
 echo "Formatting DATA partition..."
 umount -f $PART_ROOT
@@ -116,7 +114,10 @@ abootimg -i /dev/boot > aboot.txt
 abootimg -x /dev/boot
 abootimg -u /dev/boot -k $IMAGE_KERNEL
 abootimg -u /dev/boot -r $IMAGE_INITRD
-abootimg -u /dev/boot -s $IMAGE_DTB
+
+if [ -f $IMAGE_DTB ] ; then
+    abootimg -u /dev/boot -s $IMAGE_DTB
+fi
 
 echo "done."
 

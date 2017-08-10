@@ -221,9 +221,9 @@ create_board_package()
 	EOF
 
 	# script to install to SATA
-	cp -R $SRC/lib/scripts/nand-sata-install/usr $destination/
-	chmod +x $destination/usr/lib/nand-sata-install/nand-sata-install.sh
-	ln -s ../lib/nand-sata-install/nand-sata-install.sh $destination/usr/sbin/nand-sata-install
+#	cp -R $SRC/lib/scripts/nand-sata-install/usr $destination/
+#	chmod +x $destination/usr/lib/nand-sata-install/nand-sata-install.sh
+#	ln -s ../lib/nand-sata-install/nand-sata-install.sh $destination/usr/sbin/nand-sata-install
 
 	# configuration script
 	# TODO: better git update logic

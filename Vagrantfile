@@ -1,6 +1,16 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+Vagrant.require_version ">= 1.5"
+
+$provisioning_script = <<SCRIPT
+# use remote git version instead of sharing a copy from host to preserve proper file permissions
+# and prevent permission related issues for the temp directory
+git clone https://github.com/armbian/build /home/ubuntu/armbian
+ln -sf /vagrant/output /home/ubuntu/armbian/output
+ln -sf /vagrant/userpatches /home/ubuntu/armbian/userpatches
+SCRIPT
+
 Vagrant.configure(2) do |config|
 
     # What box should we base this build on?
@@ -14,30 +24,25 @@ Vagrant.configure(2) do |config|
     # Default images are not big enough to build Armbian.
     config.disksize.size = "40GB"
 
-    #######################################################################
-    # We could sync more folders (that *seems* like the best way to go),
-    # but in many cases builds fail because hardlinks are not supported.
-    # So, a more failproof approach is to just use a larger disk.
-    #
-    # Following the directory structure outlined here:
-    # https://docs.armbian.com/Developer-Guide_Build-Process/#directory-structure
+    # provisioning: install dependencies, download the repository copy
+    config.vm.provision "shell", inline: $provisioning_script
 
-    # So we don't have to download the code a 2nd time.
-    config.vm.synced_folder ".", "/home/ubuntu/lib"
+    # forward terminal type for better compatibility with Dialog - disabled on Ubuntu by default
+    config.ssh.forward_env = ["TERM"]
 
-    # Share folders with the host to make it easy to get our images out.
-    config.vm.synced_folder "../output", "/home/ubuntu/output", create: true
+    # default user name is "ubuntu", please do not change it
 
-    # Bring over your customizations.
-    config.vm.synced_folder "../userpatches", "/home/ubuntu/userpatches", create: true
+    # SSH password auth is disabled by default, uncomment to enable and set the password
+    #config.ssh.password = "armbian"
 
     config.vm.provider "virtualbox" do |vb|
         vb.name = "Armbian Builder"
+
+        # comment this to disable the VirtualBox GUI
         vb.gui = true
 
         # Tweak these to fit your needs.
-        vb.memory = "8192"
-        vb.cpus = "4"
-
+        #vb.memory = "8192"
+        #vb.cpus = "4"
     end
 end

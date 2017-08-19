@@ -8,7 +8,7 @@ build_mali_aml()
 	[[ -d "$SOURCES/$plugin_dir" && -n "$SOURCES/$plugin_dir" ]] && rm -rf $SOURCES/$plugin_dir
 
 	mkdir -p $SOURCES/$plugin_dir/
-	cp -R $SRC/lib/scripts/amlogic/mali-aml-8xx/* $SOURCES/$plugin_dir/
+	cp -R $SRC/scripts/amlogic/mali-aml-8xx/* $SOURCES/$plugin_dir/
 
 	cd $SOURCES/$plugin_dir
 
@@ -39,4 +39,4 @@ build_mali_aml()
 
 # install mali by default
 display_alert "Installing mali-aml-8xx" "$REVISION" "info"
-chroot $CACHEDIR/$SDCARD /bin/bash -c "dpkg -i /tmp/debs/mali-aml-8xx_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/mali-aml-8xx_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log

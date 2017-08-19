@@ -8,7 +8,7 @@ build_amremote()
 	[[ -d "$SOURCES/$plugin_dir" && -n "$SOURCES/$plugin_dir" ]] && rm -rf $SOURCES/$plugin_dir
 
 	mkdir -p $SOURCES/$plugin_dir/
-	cp -R $SRC/lib/scripts/amlogic/amremote/* $SOURCES/$plugin_dir/
+	cp -R $SRC/scripts/amlogic/amremote/* $SOURCES/$plugin_dir/
 
 	cd $SOURCES/$plugin_dir
 
@@ -39,5 +39,5 @@ build_amremote()
 
 # install mali by default
 display_alert "Installing amremote" "$REVISION" "info"
-chroot $CACHEDIR/$SDCARD /bin/bash -c "dpkg -i /tmp/debs/amremote_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
-chroot $CACHEDIR/$SDCARD /bin/bash -c "systemctl --no-reload enable amlogic-remotecfg.service >/dev/null 2>&1"
+chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/amremote_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+chroot $SDCARD /bin/bash -c "systemctl --no-reload enable amlogic-remotecfg.service >/dev/null 2>&1"

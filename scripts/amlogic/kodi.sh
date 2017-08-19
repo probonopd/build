@@ -8,7 +8,7 @@ build_kodi_aml()
 	[[ -d "$SOURCES/$plugin_dir" && -n "$SOURCES/$plugin_dir" ]] && rm -rf $SOURCES/$plugin_dir
 
 	mkdir -p $SOURCES/$plugin_dir/
-	cp -R $SRC/lib/scripts/amlogic/kodi-aml/* $SOURCES/$plugin_dir/
+	cp -R $SRC/scripts/amlogic/kodi-aml/* $SOURCES/$plugin_dir/
 
 	cd $SOURCES/$plugin_dir
 
@@ -40,4 +40,4 @@ build_kodi_aml()
 
 # install mali by default
 display_alert "Installing kodi-aml" "$REVISION" "info"
-chroot $CACHEDIR/$SDCARD /bin/bash -c "dpkg -i /tmp/debs/kodi-aml_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/kodi-aml_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log

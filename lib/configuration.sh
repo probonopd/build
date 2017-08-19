@@ -124,7 +124,7 @@ PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-f
 	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl gksu bluetooth \
 	network-manager-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
 	paman pavumeter pulseaudio-module-gconf pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv gparted synaptic \
-	libreoffice-writer libreoffice-style-tango libreoffice-gtk policykit-1 fbi profile-sync-daemon expect rcconf"
+	libreoffice-writer libreoffice-style-tango policykit-1 fbi profile-sync-daemon expect rcconf"
 
 #case $DISPLAY_MANAGER in
 #	nodm)
@@ -146,7 +146,7 @@ case $BUILD_DESKTOP_DE in
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP xfce4 xfce4-screenshooter xfce4-notifyd"
 	;;
 	mate)
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets ubuntu-mate-lightdm-theme"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets ubuntu-mate-lightdm-theme libreoffice-gtk"
 	;;
 esac
 

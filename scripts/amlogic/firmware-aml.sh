@@ -38,5 +38,5 @@ build_firmware-aml()
 [[ ! -f $DEST/debs/firmware-aml_${REVISION}_${ARCH}.deb ]] && build_firmware-aml
 
 # install basic firmware by default
-display_alert "Installing linux firmware-aml" "$REVISION" "info"
+display_alert "Installing firmware-aml" "$REVISION" "info"
 chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/firmware-aml_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log

@@ -53,7 +53,7 @@ install_desktop ()
 
 	# Disable desktop mode autostart for now to enforce creation of normal user account
 	[[ -f $SDCARD/etc/default/nodm ]] && sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i $SDCARD/etc/default/nodm
-	[[ -d $SDCARD/etc/lightdm ]] && chroot $SDCARD /bin/bash -c "systemctl --no-reload disable lightdm.service >/dev/null 2>&1"
+#	[[ -d $SDCARD/etc/lightdm ]] && chroot $SDCARD /bin/bash -c "systemctl --no-reload disable lightdm.service >/dev/null 2>&1"
 
 	# install logo for login screen
 	cp $SRC/packages/blobs/desktop/icons/armbian.png $SDCARD/usr/share/pixmaps

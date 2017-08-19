@@ -380,9 +380,9 @@ case $1 in
 		# some kernel modules are known to crash the kernel on shutdown (an example
 		# is the mass storage gadget module at least on sun7i). We try to unload as
 		# much modules as possible to minimize such situations:
-		###/sbin/modprobe -r $(cut -f1 -d' ' </proc/modules)
+#		/sbin/modprobe -r $(cut -f1 -d' ' </proc/modules)
 		# shutdown logging
-		###echo -e "\n### shutdown:\n\n$(dmesg | tail -n 100)" >>/var/log/armhwinfo.log
+#		echo -e "\n### shutdown:\n\n$(dmesg | tail -n 100)" >>/var/log/armhwinfo.log
 		sync
 		;;
 esac

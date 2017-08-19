@@ -145,7 +145,7 @@ case "$1" in
 	[[ ! -f /var/run/resize2fs-reboot ]] && systemctl disable resize2fs
 
 	# stop lightdm first run
-#	systemctl stop lightdm
+	systemctl stop lightdm
 
 	exit 0
 	;;

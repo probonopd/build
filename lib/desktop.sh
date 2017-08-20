@@ -68,8 +68,8 @@ install_desktop ()
 		echo "disp_mem_reserves=on" >> $SDCARD/boot/armbianEnv.txt
 	fi
 
-	sed -e 's/exit 0//g' -i $CACHEDIR/$SDCARD/etc/rc.local
-	echo "su -c 'hciattach /dev/ttyS1 any'" >> $CACHEDIR/$SDCARD/etc/rc.local
-	echo "exit 0" >> $CACHEDIR/$SDCARD/etc/rc.local
+	sed -e 's/exit 0//g' -i $SDCARD/etc/rc.local
+	echo "su -c 'hciattach /dev/ttyS1 any'" >> $SDCARD/etc/rc.local
+	echo "exit 0" >> $SDCARD/etc/rc.local
 
 }

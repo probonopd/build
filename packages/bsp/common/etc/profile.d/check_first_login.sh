@@ -64,6 +64,10 @@ add_user()
 }
 
 if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*i}" ]; then
+	# detect desktop
+	if [ $(dpkg-query -W -f='${db:Status-Abbrev}\n' nodm 2>/dev/null) <> "*ii*" ]; then DESKTOPDETECT="nodm"; fi
+	if [ $(dpkg-query -W -f='${db:Status-Abbrev}\n' lightdm 2>/dev/null) <> "*ii*" ]; then DESKTOPDETECT="lightdm"; fi
+
 	if [ "$IMAGE_TYPE" != "nightly" ]; then
 		echo -e "\n\e[0;31mThank you for choosing Armbian! Support: \e[1m\e[39mwww.armbian.com\x1B[0m\n"
 	else
@@ -75,7 +79,7 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 		echo -e "\nThis image is provided \e[0;31mAS IS\x1B[0m with \e[0;31mNO WARRANTY\x1B[0m and \e[0;31mNO END USER SUPPORT!\x1B[0m.\n"
 	fi
 	echo "Creating a new user account. Press <Ctrl-C> to abort"
-	[ -f "/etc/init.d/nodm" ] || [ -d "/etc/lightdm" ] && echo "Desktop environment will not be enabled if you abort the new user creation"
+	[ -n "$DESKTOPDETECT" ] && echo "Desktop environment will not be enabled if you abort the new user creation"
 	trap check_abort INT
 	while [ -f "/root/.not_logged_in_yet" ]; do
 		add_user
@@ -94,7 +98,6 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 			echo -e "\n"
 		fi
 	fi
-
 	# check whether desktop environment has to be considered
 #	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
 #		# enable splash

@@ -35,8 +35,8 @@ create_board_package()
 	Depends: bash, linux-base, u-boot-tools, initramfs-tools
 	Provides: armbian-bsp
 	Conflicts: armbian-bsp
-	Replaces: base-files, mpv, armbian-tools-$RELEASE
-	Recommends: bsdutils, parted, python3-apt, util-linux, toilet, wireless-tools
+	Replaces: base-files, mpv, lightdm-gtk-greeter, armbian-tools-$RELEASE
+	Recommends: bsdutils, parted, python3-apt, util-linux, toilet
 	Description: Armbian tweaks for $RELEASE on $BOARD ($BRANCH branch)
 	EOF
 
@@ -52,7 +52,7 @@ create_board_package()
 		mv /etc/network/interfaces.tmp /etc/network/interfaces
 	fi
 	# make a backup since we are unconditionally overwriting this on update
-	cp /etc/default/cpufrequtils /etc/default/cpufrequtils.dpkg-old
+	[ -f "/etc/default/cpufrequtils" ] && cp /etc/default/cpufrequtils /etc/default/cpufrequtils.dpkg-old
 	dpkg-divert --package linux-${RELEASE}-root-${DEB_BRANCH}${BOARD} --add --rename \
 		--divert /etc/mpv/mpv-dist.conf /etc/mpv/mpv.conf
 	exit 0
@@ -127,6 +127,7 @@ create_board_package()
 	IMAGE_TYPE=$IMAGE_TYPE
 	BOARD_TYPE=$BOARD_TYPE
 	INITRD_ARCH=$INITRD_ARCH
+	KERNEL_IMAGE_TYPE=$KERNEL_IMAGE_TYPE
 	EOF
 
 	# this is required for NFS boot to prevent deconfiguring the network on shutdown
@@ -135,6 +136,8 @@ create_board_package()
 	# armbian-config
 	install -m 755 $SRC/cache/sources/armbian-config/scripts/tv_grab_file $destination/usr/bin/tv_grab_file
 	install -m 755 $SRC/cache/sources/armbian-config/debian-config $destination/usr/bin/armbian-config
+	install -m 755 $SRC/cache/sources/armbian-config/debian-config-jobs $destination/usr/bin/armbian-config-jobs
+	install -m 755 $SRC/cache/sources/armbian-config/debian-config-submenu $destination/usr/bin/armbian-config-submenu
 	install -m 755 $SRC/cache/sources/armbian-config/softy $destination/usr/bin/softy
 
 	# install copy of boot script & environment file

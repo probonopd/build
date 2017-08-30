@@ -141,7 +141,7 @@ prepare_board() {
 		ODROID-XU3|EXYNOS) # ODROID XU3/XU4
 			echo 2 >/proc/irq/$(awk -F":" "/usb2/ {print \$1}" </proc/interrupts | sed 's/\ //g')/smp_affinity
 			echo 4 >/proc/irq/$(awk -F":" "/usb3/ {print \$1}" </proc/interrupts | sed 's/\ //g')/smp_affinity
-			echo 8 >/proc/irq/$(awk -F":" "/usb5/ {print \$1}" </proc/interrupts | sed 's/\ //g')/smp_affinity
+			echo 7 >/proc/irq/$(awk -F":" "/usb5/ {print \$1}" </proc/interrupts | sed 's/\ //g')/smp_affinity_list
 			echo 16 >/proc/irq/$(awk -F":" "/dw-mci/ {print \$1}" </proc/interrupts | sed 's/\ //g' | tail -1)/smp_affinity
 			echo 32 >/proc/irq/$(awk -F":" "/dw-mci/ {print \$1}" </proc/interrupts | sed 's/\ //g' | head -1)/smp_affinity
 			for i in $(awk -F':' '/11800000.mali/{print $1}' </proc/interrupts | sed 's/\ //g'); do
@@ -252,6 +252,20 @@ prepare_board() {
 					echo 32768 >/proc/sys/net/core/rps_sock_flow_entries
 					echo 32768 >/sys/class/net/eth0/queues/rx-0/rps_flow_cnt
 					;;
+				nanopim3) # dw-mci on cpu1, USB host on cpu2, GbE on cpu3, USB OTG on cpu4, video-codec on cpu5
+					for i in $(awk -F':' '/dw-mci/{print $1}' </proc/interrupts | sed 's/\ //g'); do
+						echo 1 >/proc/irq/$i/smp_affinity_list
+					done
+					echo 2 >/proc/irq/$(awk -F":" "/usb3/ {print \$1}" </proc/interrupts | sed 's/\ //g')/smp_affinity_list
+					echo 3 >/proc/irq/$(awk -F":" "/eth0/ {print \$1}" </proc/interrupts | sed 's/\ //g')/smp_affinity_list
+					echo 4 >/proc/irq/$(awk -F":" "/usb1/ {print \$1}" </proc/interrupts | sed 's/\ //g')/smp_affinity_list
+					for i in $(awk -F':' '/c0080000.video-codec/{print $1}' </proc/interrupts | sed 's/\ //g'); do
+						echo 5 >/proc/irq/$i/smp_affinity_list
+					done
+					echo 7 >/sys/class/net/eth0/queues/rx-0/rps_cpus
+					echo 32768 >/proc/sys/net/core/rps_sock_flow_entries
+					echo 32768 >/sys/class/net/eth0/queues/rx-0/rps_flow_cnt
+					;;
 			esac
 			;;
 	esac
@@ -275,8 +289,7 @@ log_hardware_info() {
 	echo -e "\n### boot environment:\n" >>${Log}
 	cat /boot/armbianEnv.txt >>${Log} 2>/dev/null || grep -v "^#" /boot/boot.ini | sed '/^\s*$/d' >>${Log}
 	echo -e "\n### lsusb:" >>${Log}
-	[ -f /boot/.force-verbose ] && USBVERBOSE="-v" || echo "" >>${Log}
-	lsusb ${USBVERBOSE} 2>/dev/null >>${Log}
+	lsusb 2>/dev/null >>${Log}
 	echo -e "\n### lscpu:\n" >>${Log}
 	lscpu >>${Log}
 	echo -e "\n### cpuinfo:\n" >>${Log}
@@ -289,6 +302,8 @@ log_hardware_info() {
 	cat /proc/partitions >>${Log}
 	echo -e "\n### df:\n" >>${Log}
 	df -h >>${Log}
+	echo -e "\n### mtab:\n" >>${Log}
+	grep '^/dev/' /etc/mtab | sort  >>${Log}
 	[[ -e /boot/script.bin ]] && echo -e "\n### /boot/script.bin --> $(readlink /boot/script.bin)" >>${Log}
 	get_flash_information >>${Log} &
 	(sleep 20 && echo -e "\n### interrupts:\n$(cat /proc/interrupts)" >>${Log}) &

@@ -115,7 +115,6 @@ InstallOpenMediaVault() {
 	/usr/sbin/omv-mkconf flashmemory
 	/usr/sbin/omv-mkconf ssh
 	/usr/sbin/omv-mkconf ntp
-	/usr/sbin/omv-mkconf timezone
 	systemctl disable log2ram
 	rm /etc/cron.daily/log2ram
 	/sbin/folder2ram -enablesystemd
@@ -129,8 +128,13 @@ InstallOpenMediaVault() {
 	sed -i '/systemctl\ disable\ firstrun/i \
 	mv /usr/bin/newaliases.bak /usr/bin/newaliases \
 	export DEBIAN_FRONTEND=noninteractive \
-	apt-get install -f || exit 0 \
+	sleep 3 \
+	apt-get install -f -qq python-pip || exit 0 \
+	pip install -U tzupdate \
+	tzupdate \
+	read TZ </etc/timezone \
 	/usr/sbin/omv-initsystem \
+	xmlstarlet ed -L -u "/config/system/time/timezone" -v "${TZ}" /etc/openmediavault/config.xml \
 	mv /etc/default/cpufrequtils.bak /etc/default/cpufrequtils \
 	. /etc/default/cpufrequtils \
 	echo -e "OMV_CPUFREQUTILS_GOVERNOR=${GOVERNOR}" >>/etc/default/openmediavault \
@@ -138,10 +142,10 @@ InstallOpenMediaVault() {
 	echo -e "OMV_CPUFREQUTILS_MAXSPEED=${MAX_SPEED}" >>/etc/default/openmediavault \
 	/usr/sbin/omv-rpc -u admin "perfstats" "set" \x27{"enable":false}\x27 \
 	/usr/sbin/omv-rpc -u admin "config" "applyChanges" \x27{ "modules": ["monit","rrdcached","collectd"],"force": true }\x27 \
+	/usr/sbin/omv-mkconf timezone \
 	/usr/sbin/omv-mkconf monit \
 	/usr/sbin/omv-mkconf rrdcached \
 	/usr/sbin/omv-mkconf collectd \
-	lsusb | grep -q "0bda:8153" || sed -i "/r8152/d" /etc/modules \
 	lsusb | egrep -q "0b95:1790|0b95:178a|0df6:0072" || sed -i "/ax88179_178a/d" /etc/modules' /etc/init.d/firstrun
 	sed -i '/systemctl\ disable\ firstrun/a \
 	sync && sleep 30 && reboot' /etc/init.d/firstrun
@@ -156,10 +160,10 @@ InstallOpenMediaVault() {
 	/usr/sbin/omv-mkconf samba
 
 	# Special treatment for ODROID-XU4 (and later Amlogic S912, RK3399 and other big.LITTLE
-	# based devices). Move all NAS daemons to the big cores. Increase coherent-memory size
+	# based devices). Move all NAS daemons to the big cores.
 	# to 1MB: https://forum.odroid.com/viewtopic.php?f=146&t=26016&start=200#p197729
 	if [ "${BOARD}" = "odroidxu4" ]; then
-		XU4_HMP_Fix='; taskset -c -p 4-7 $i '
+		HMP_Fix='; taskset -c -p 4-7 $i '
 		# Cloudshell stuff (fan, lcd, missing serials on 1st CS2 batch)
 		echo "H4sIAKdXHVkCA7WQXWuDMBiFr+eveOe6FcbSrEIH3WihWx0rtVbUFQqCqAkYGhJn
 		tF1x/vep+7oebDfh5DmHwJOzUxwzgeNIpRp9zWRegDPznya4VDlWTXXbpS58XJtD
@@ -168,14 +172,15 @@ InstallOpenMediaVault() {
 		QL+Cr8rJJSmTouuuRzfDtluarm1aLVHksgWmvanm5sbfOmY3JEztWu5tV9bCXn4S
 		HB8RIzjoUbGvFvPw/tmr0UMr6bWSBupVrulY2xp9T1bruWnVga7DdAqYFgkuCd3j
 		vORUDQgej9HPJxmDDv+3WxblBSuYFH8oiNpHz8XvPIkU9B3JVCJ/awIAAA==" \
-		| tr -d '[:blank:]' | base64 --decode | gunzip -c >/usr/local/sbin/coudshell2-support.sh
-		chmod 755 /usr/local/sbin/coudshell2-support.sh
+		| tr -d '[:blank:]' | base64 --decode | gunzip -c >/usr/local/sbin/cloudshell2-support.sh
+		chmod 755 /usr/local/sbin/cloudshell2-support.sh
 		apt install -y i2c-tools odroid-cloudshell cloudshell2-fan
 		sed -i '/systemctl\ disable\ firstrun/i \
-		/usr/sbin/i2cdetect -y 1 | grep -q "60: 60" && /usr/local/sbin/coudshell2-support.sh' /etc/init.d/firstrun
-		sed -i 's/extraargs}"/extraargs} coherent_pool=1M"/' /boot/boot.ini
+		/usr/sbin/i2cdetect -y 1 | grep -q "60: 60" && /usr/local/sbin/cloudshell2-support.sh' /etc/init.d/firstrun
+	elif [ "${BOARD}" = "nanopim3" ]; then
+		HMP_Fix='; taskset -c -p 4-7 $i '
 	fi
-	echo "* * * * * root for i in \`pgrep \"ftpd|nfsiod|smbd|afpd|cnid\"\` ; do ionice -c1 -p \$i ${XU4_HMP_Fix}; done >/dev/null 2>&1" \
+	echo "* * * * * root for i in \`pgrep \"ftpd|nfsiod|smbd|afpd|cnid\"\` ; do ionice -c1 -p \$i ${HMP_Fix}; done >/dev/null 2>&1" \
 		>/etc/cron.d/make_nas_processes_faster
 	chmod 600 /etc/cron.d/make_nas_processes_faster
 

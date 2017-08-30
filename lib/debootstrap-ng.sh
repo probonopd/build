@@ -36,14 +36,15 @@ debootstrap_ng()
 
 	# stage: verify tmpfs configuration and mount
 	# default maximum size for tmpfs mount is 1/2 of available RAM
-	# CLI needs ~1.2GiB+ (Xenial CLI), Desktop - ~2.2GiB+ (Xenial Desktop w/o HW acceleration)
+	# CLI needs ~1.2GiB+ (Xenial CLI), Desktop - ~2.8GiB+ (Xenial Desktop w/o HW acceleration)
 	# calculate and set tmpfs mount to use 2/3 of available RAM
 	local phymem=$(( $(awk '/MemTotal/ {print $2}' /proc/meminfo) / 1024 * 2 / 3 )) # MiB
-	if [[ $BUILD_DESKTOP == yes ]]; then local tmpfs_max_size=3200; else local tmpfs_max_size=1500; fi # MiB
+	if [[ $BUILD_DESKTOP == yes ]]; then local tmpfs_max_size=3500; else local tmpfs_max_size=1500; fi # MiB
 	if [[ $FORCE_USE_RAMDISK == no ]]; then	local use_tmpfs=no
 	elif [[ $FORCE_USE_RAMDISK == yes || $phymem -gt $tmpfs_max_size ]]; then
 		local use_tmpfs=yes
 	fi
+	[[ -n $FORCE_TMPFS_SIZE ]] && phymem=$FORCE_TMPFS_SIZE
 
 	[[ $use_tmpfs == yes ]] && mount -t tmpfs -o size=${phymem}M tmpfs $SDCARD
 
@@ -290,7 +291,7 @@ prepare_partitions()
 	# mountopts[ext2] is empty
 	# mountopts[fat] is empty
 	# mountopts[f2fs] is empty
-	# mountopts[btrfs] is empty
+	mountopts[btrfs]=',commit=600,compress=lzo'
 	# mountopts[nfs] is empty
 
 	# stage: determine partition configuration
@@ -329,9 +330,19 @@ prepare_partitions()
 		fi
 	else
 		local imagesize=$(( $rootfs_size + $OFFSET + $BOOTSIZE )) # MiB
-		# Hardcoded overhead +40% and +128MB for ext4 is needed for desktop images, for CLI it can be lower
-		# also add extra 128 MiB for the emergency swap file creation and align the size up to 4MiB
-		local sdsize=$(bc -l <<< "scale=0; ((($imagesize * 1.4) / 1 + 128) / 4 + 1) * 4")
+		case $ROOTFS_TYPE in
+			btrfs)
+				# Used for server images, currently no swap functionality, so disk space
+				# requirements are rather low since rootfs gets filled with compress-force=zlib
+				local sdsize=$(bc -l <<< "scale=0; (($imagesize * 0.8) / 4 + 1) * 4")
+				;;
+			*)
+				# Hardcoded overhead +40% and +128MB for ext4 is needed for desktop images,
+				# for CLI it could be lower. Also add extra 128 MiB for the emergency swap
+				# file creation and align the size up to 4MiB
+				local sdsize=$(bc -l <<< "scale=0; ((($imagesize * 1.4) / 1 + 128) / 4 + 1) * 4")
+				;;
+		esac
 	fi
 
 	# stage: create blank image

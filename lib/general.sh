@@ -464,10 +464,10 @@ prepare_host()
 	# packages list for host
 	# NOTE: please sync any changes here with the Dockerfile and Vagrantfile
 	local hostdeps="wget ca-certificates device-tree-compiler pv bc lzop zip binfmt-support build-essential ccache debootstrap ntpdate \
-	gawk gcc-arm-linux-gnueabihf gcc-arm-linux-gnueabi qemu-user-static u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev \
+	gawk gcc-arm-linux-gnueabihf qemu-user-static u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev \
 	parted pkg-config libncurses5-dev whiptail debian-keyring debian-archive-keyring f2fs-tools libfile-fcntllock-perl rsync libssl-dev \
-	nfs-kernel-server btrfs-tools gcc-aarch64-linux-gnu ncurses-term p7zip-full dos2unix dosfstools libc6-dev-armhf-cross libc6-dev-armel-cross \
-	libc6-dev-arm64-cross curl gcc-arm-none-eabi libnewlib-arm-none-eabi patchutils python liblz4-tool libpython2.7-dev linux-base swig libpython-dev \
+	nfs-kernel-server btrfs-tools ncurses-term p7zip-full kmod dosfstools libc6-dev-armhf-cross \
+	curl patchutils python liblz4-tool libpython2.7-dev linux-base swig libpython-dev \
 	locales ncurses-base pixz"
 
 	local codename=$(lsb_release -sc)
@@ -477,9 +477,8 @@ prepare_host()
 	fi
 
 	if [[ $codename == xenial ]]; then
-		hostdeps="$hostdeps systemd-container udev distcc libstdc++-arm-none-eabi-newlib gcc-4.9-arm-linux-gnueabihf \
-			gcc-4.9-aarch64-linux-gnu g++-4.9-arm-linux-gnueabihf g++-4.9-aarch64-linux-gnu g++-5-aarch64-linux-gnu \
-			g++-5-arm-linux-gnueabihf lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 aptly"
+		hostdeps="$hostdeps systemd-container udev distcc \
+			lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 aptly"
 		grep -q i386 <(dpkg --print-foreign-architectures) || dpkg --add-architecture i386
 		if systemd-detect-virt -q -c; then
 			display_alert "Running in container" "$(systemd-detect-virt)" "info"
@@ -537,12 +536,16 @@ prepare_host()
 	fi
 
 	# create directory structure
-	mkdir -p $DEST/debs/extra $DEST/{config,debug,patch} $SRC/userpatches/overlay $SRC/cache/{sources,toolchains,rootfs} $SRC/.tmp
+	mkdir -p $SRC/{cache,output,userpatches}
 	if [[ -n $SUDO_USER ]]; then
 		chgrp --quiet sudo cache output userpatches
 		# SGID bit on cache/sources breaks kernel dpkg packaging
 		chmod --quiet g+w,g+s output userpatches
+		# fix existing permissions
+		find $SRC/output $SRC/userpatches -type d ! -group sudo -exec chgrp --quiet sudo {} \;
+		find $SRC/output $SRC/userpatches -type d ! -perm -g+w,g+s -exec chmod --quiet g+w,g+s {} \;
 	fi
+	mkdir -p $DEST/debs/extra $DEST/{config,debug,patch} $SRC/userpatches/overlay $SRC/cache/{sources,toolchains,rootfs} $SRC/.tmp
 
 	find $SRC/patch -type d ! -name . | sed "s%/patch%/userpatches%" | xargs mkdir -p
 
@@ -552,6 +555,9 @@ prepare_host()
 		"https://releases.linaro.org/components/toolchain/binaries/4.9-2017.01/aarch64-linux-gnu/gcc-linaro-4.9.4-2017.01-x86_64_aarch64-linux-gnu.tar.xz"
 		"https://releases.linaro.org/components/toolchain/binaries/4.9-2017.01/arm-linux-gnueabi/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabi.tar.xz"
 		"https://releases.linaro.org/components/toolchain/binaries/4.9-2017.01/arm-linux-gnueabihf/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/aarch64-linux-gnu/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/arm-linux-gnueabi/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabi.tar.xz"
+		"https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/arm-linux-gnueabihf/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
 		"https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/arm-linux-gnueabihf/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
 		"https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/aarch64-linux-gnu/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
 		"https://releases.linaro.org/components/toolchain/binaries/7.1-2017.05/aarch64-linux-gnu/gcc-linaro-7.1.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"

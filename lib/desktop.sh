@@ -9,9 +9,7 @@
 
 install_desktop ()
 {
-	DE=$BUILD_DESKTOP_DE
-
-	display_alert "Installing desktop" "$DE" "info"
+	display_alert "Installing desktop" "XFCE" "info"
 
 	# add loading desktop splash service
 	cp $SRC/packages/blobs/desktop/desktop-splash/desktop-splash.service $SDCARD/etc/systemd/system/desktop-splash.service
@@ -32,8 +30,8 @@ install_desktop ()
 	sed 's/xenial.png/'${DISTRIBUTION,,}'.png/' -i $SDCARD/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
 
 	# install wallpapers
-	mkdir -p $SDCARD/usr/share/backgrounds/$DE/
-	cp $SRC/packages/blobs/desktop/wallpapers/armbian*.jpg $SDCARD/usr/share/backgrounds/$DE/
+	mkdir -p $SDCARD/usr/share/backgrounds/xfce/
+	cp $SRC/packages/blobs/desktop/wallpapers/armbian*.jpg $SDCARD/usr/share/backgrounds/xfce/
 
 	# Install custom icons and theme
 	cp $SRC/packages/blobs/desktop/vibrancy-colors_2.4-trusty-Noobslab.com_all.deb $SDCARD/tmp/
@@ -49,17 +47,16 @@ install_desktop ()
 	fi
 
 	# Disable Pulseaudio timer scheduling which does not work with sndhdmi driver
-#	if [[ -f $SDCARD/etc/pulse/default.pa ]]; then
-#		sed "s/load-module module-udev-detect$/& tsched=0/g" -i  $SDCARD/etc/pulse/default.pa
-#	fi
+	if [[ -f $SDCARD/etc/pulse/default.pa ]]; then
+		sed "s/load-module module-udev-detect$/& tsched=0/g" -i  $SDCARD/etc/pulse/default.pa
+	fi
 
 	# Disable desktop mode autostart for now to enforce creation of normal user account
 	[[ -f $SDCARD/etc/default/nodm ]] && sed "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=false/g" -i $SDCARD/etc/default/nodm
-#	[[ -d $SDCARD/etc/lightdm ]] && chroot $SDCARD /bin/bash -c "systemctl --no-reload disable lightdm.service >/dev/null 2>&1"
+	[[ -d $SDCARD/etc/lightdm ]] && chroot $SDCARD /bin/bash -c "systemctl --no-reload disable lightdm.service >/dev/null 2>&1"
 
 	# install logo for login screen
 	cp $SRC/packages/blobs/desktop/icons/armbian.png $SDCARD/usr/share/pixmaps
-	cp -R $SRC/packages/blobs/desktop/lightdm $SDCARD/etc
 
 	# Compile Turbo Frame buffer for sunxi
 	if [[ $LINUXFAMILY == sun* && $BRANCH == default ]]; then
@@ -69,9 +66,4 @@ install_desktop ()
 		# enable memory reservations
 		echo "disp_mem_reserves=on" >> $SDCARD/boot/armbianEnv.txt
 	fi
-
-	sed -e 's/exit 0//g' -i $SDCARD/etc/rc.local
-	echo "su -c 'hciattach /dev/ttyS1 any'" >> $SDCARD/etc/rc.local
-	echo "exit 0" >> $SDCARD/etc/rc.local
-
 }

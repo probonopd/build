@@ -46,9 +46,6 @@ add_user()
 	# fix for gksu in Xenial
 	touch /home/$RealUserName/.Xauthority
 	chown $RealUserName:$RealUserName /home/$RealUserName/.Xauthority
-
-	usermod -a -G audio,video,disk,input,tty,root,users,games $RealUserName
-
 	RealName="$(awk -F":" "/^${RealUserName}:/ {print \$5}" </etc/passwd | cut -d',' -f1)"
 	[ -z "$RealName" ] && RealName=$RealUserName
 	echo -e "\nDear ${RealName}, your account ${RealUserName} has been created and is sudo enabled."
@@ -65,8 +62,11 @@ add_user()
 
 if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*i}" ]; then
 	# detect desktop
-	if [ $(dpkg-query -W -f='${db:Status-Abbrev}\n' nodm 2>/dev/null) <> "*ii*" ]; then DESKTOPDETECT="nodm"; fi
-	if [ $(dpkg-query -W -f='${db:Status-Abbrev}\n' lightdm 2>/dev/null) <> "*ii*" ]; then DESKTOPDETECT="lightdm"; fi
+	desktop_nodm=$(dpkg-query -W -f='${db:Status-Abbrev}\n' nodm 2>/dev/null)
+	desktop_lightdm=$(dpkg-query -W -f='${db:Status-Abbrev}\n' lightdm 2>/dev/null)
+
+	if [ -n "$desktop_nodm" ]; then DESKTOPDETECT="nodm"; fi
+	if [ -n "$desktop_lightdm" ]; then DESKTOPDETECT="lightdm"; fi
 
 	if [ "$IMAGE_TYPE" != "nightly" ]; then
 		echo -e "\n\e[0;31mThank you for choosing Armbian! Support: \e[1m\e[39mwww.armbian.com\x1B[0m\n"
@@ -99,44 +99,40 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 		fi
 	fi
 	# check whether desktop environment has to be considered
-#	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
-#		# enable splash
-#		# [[ -f /etc/systemd/system/desktop-splash.service ]] && systemctl --no-reload enable desktop-splash.service >/dev/null 2>&1 && service desktop-splash restart
-#		sed -i "s/NODM_USER=\(.*\)/NODM_USER=${RealUserName}/" /etc/default/nodm
-#		sed -i "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=true/g" /etc/default/nodm
-#		if [[ -f /var/run/resize2fs-reboot ]]; then
-#			# Let the user reboot now otherwise start desktop environment
-#			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"
-#			printf "\e[0;91mPlease reboot the system now \x1B[0m \n\n"
-#		elif [ -z "$ConfigureDisplay" ] || [ "$ConfigureDisplay" = "n" ] || [ "$ConfigureDisplay" = "N" ]; then
-#			echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
-#			sleep 3
-#			service nodm stop
-#			sleep 1
-#			service nodm start
-#		fi
-#	if [ -d "/etc/lightdm" ] && [ -n "$RealName" ] ; then
-#		systemctl enable lightdm.service 2>/dev/null
-#		if [[ -f /var/run/resize2fs-reboot ]]; then
-#			# Let the user reboot now otherwise start desktop environment
-#			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"
-#			printf "\e[0;91mPlease reboot the system now \x1B[0m \n\n"
-#		elif [ -z "$ConfigureDisplay" ] || [ "$ConfigureDisplay" = "n" ] || [ "$ConfigureDisplay" = "N" ]; then
-#			echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
-#			sleep 1
-#			service lightdm start 2>/dev/null
-#			# logout if logged at console
-#			[[ -n $(who -la | grep root | grep tty1) ]] && exit 1
-#		fi
-#	else
-#		# Display reboot recommendation if necessary
-#		if [[ -f /var/run/resize2fs-reboot ]]; then
-#			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"
-#			printf "\e[0;91mPlease reboot the system now \x1B[0m \n\n"
-#		fi
-#	fi
-	sync
-	echo -e "Sucesfuul setup. Reboot system.\n"
-	sleep 3
-	reboot
+	if [ "$DESKTOPDETECT" = nodm ] && [ -n "$RealName" ] ; then
+		# enable splash
+		# [[ -f /etc/systemd/system/desktop-splash.service ]] && systemctl --no-reload enable desktop-splash.service >/dev/null 2>&1 && service desktop-splash restart
+		sed -i "s/NODM_USER=\(.*\)/NODM_USER=${RealUserName}/" /etc/default/nodm
+		sed -i "s/NODM_ENABLED=\(.*\)/NODM_ENABLED=true/g" /etc/default/nodm
+		if [[ -f /var/run/resize2fs-reboot ]]; then
+			# Let the user reboot now otherwise start desktop environment
+			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"
+			printf "\e[0;91mPlease reboot the system now \x1B[0m \n\n"
+		elif [ -z "$ConfigureDisplay" ] || [ "$ConfigureDisplay" = "n" ] || [ "$ConfigureDisplay" = "N" ]; then
+			echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
+			sleep 3
+			service nodm stop
+			sleep 1
+			service nodm start
+		fi
+	elif [ "$DESKTOPDETECT" = lightdm ] && [ -n "$RealName" ] ; then
+			ln -sf /lib/systemd/system/lightdm.service /etc/systemd/system/display-manager.service
+		if [[ -f /var/run/resize2fs-reboot ]]; then
+			# Let the user reboot now otherwise start desktop environment
+			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"
+			printf "\e[0;91mPlease reboot the system now \x1B[0m \n\n"
+		elif [ -z "$ConfigureDisplay" ] || [ "$ConfigureDisplay" = "n" ] || [ "$ConfigureDisplay" = "N" ]; then
+			echo -e "\n\e[1m\e[39mNow starting desktop environment...\x1B[0m\n"
+			sleep 1
+			service lightdm start 2>/dev/null
+			# logout if logged at console
+			[[ -n $(who -la | grep root | grep tty1) ]] && exit 1
+		fi
+	else
+		# Display reboot recommendation if necessary
+		if [[ -f /var/run/resize2fs-reboot ]]; then
+			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"
+			printf "\e[0;91mPlease reboot the system now \x1B[0m \n\n"
+		fi
+	fi
 fi

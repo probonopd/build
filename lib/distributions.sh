@@ -17,7 +17,7 @@ install_common()
 	display_alert "Applying common tweaks" "" "info"
 
 	# add dummy fstab entry to make mkinitramfs happy
-	echo "LABEL=ROOTFS / $ROOTFS_TYPE defaults 0 1" >> $SDCARD/etc/fstab
+	echo "/dev/mmcblk0p1 / $ROOTFS_TYPE defaults 0 1" >> $SDCARD/etc/fstab
 	# required for initramfs-tools-core on Stretch since it ignores the / fstab entry
 	echo "/dev/mmcblk0p2 /usr $ROOTFS_TYPE defaults 0 2" >> $SDCARD/etc/fstab
 
@@ -97,14 +97,6 @@ install_common()
 	ff02::2     ip6-allrouters
 	EOF
 
-	# add hdmi init
-	if [[ $BOARD_NAME == "S9xxx" ]]; then
-		display_alert "Hook initramfs" "$BOARD_NAME" "info"
-		install -m 755 $SRC/scripts/amlogic/905_hdmi $SDCARD/usr/share/initramfs-tools/hooks/hdmi
-		install -m 755 $SRC/scripts/amlogic/905_init $SDCARD/usr/share/initramfs-tools/init
-		install -m 755 $SRC/scripts/amlogic/$SCR_HDMI_INIT $SDCARD/bin/hdmi_init.sh
-	fi
-
 	display_alert "Installing kernel" "$CHOSEN_KERNEL" "info"
 	chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
 
@@ -116,10 +108,10 @@ install_common()
 		chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/${CHOSEN_KERNEL/image/headers}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
 	fi
 
-#	if [[ -f $SDCARD/tmp/debs/armbian-firmware_${REVISION}_${ARCH}.deb ]]; then
-#		display_alert "Installing generic firmware" "armbian-firmware" "info"
-#		chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/armbian-firmware_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
-#	fi
+	if [[ -f $SDCARD/tmp/debs/armbian-firmware_${REVISION}_${ARCH}.deb ]]; then
+		display_alert "Installing generic firmware" "armbian-firmware" "info"
+		chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/armbian-firmware_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
+	fi
 
 	if [[ -f $SDCARD/tmp/debs/${CHOSEN_KERNEL/image/dtb}_${REVISION}_${ARCH}.deb ]]; then
 		display_alert "Installing DTB" "${CHOSEN_KERNEL/image/dtb}" "info"
@@ -170,7 +162,7 @@ install_common()
 
 	# install initial asound.state if defined
 	mkdir -p $SDCARD/var/lib/alsa/
-	[[ -n $ASOUND_STATE ]] && cp $SRC/config/$ASOUND_STATE $SDCARD/var/lib/alsa/asound.state
+	[[ -n $ASOUND_STATE ]] && cp $SRC/packages/blobs/asound.state/$ASOUND_STATE $SDCARD/var/lib/alsa/asound.state
 
 	# save initial armbian-release state
 	cp $SDCARD/etc/armbian-release $SDCARD/etc/armbian-image-release

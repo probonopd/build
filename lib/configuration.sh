@@ -58,7 +58,6 @@ MAINLINE_UBOOT_DIR='u-boot'
 ARCH=armhf
 KERNEL_IMAGE_TYPE=zImage
 SERIALCON=ttyS0
-SRC_LOADADDR=""
 
 # single ext4 partition is the default and preferred configuration
 #BOOTFS_TYPE=''
@@ -97,6 +96,9 @@ case $ARCH in
 	;;
 esac
 
+BOOTCONFIG_VAR_NAME=BOOTCONFIG_${BRANCH^^}
+[[ -n ${!BOOTCONFIG_VAR_NAME} ]] && BOOTCONFIG=${!BOOTCONFIG_VAR_NAME}
+
 [[ -z $LINUXCONFIG ]] && LINUXCONFIG="linux-${LINUXFAMILY}-${BRANCH}"
 
 [[ -z $BOOTPATCHDIR ]] && BOOTPATCHDIR="u-boot-$LINUXFAMILY"
@@ -109,7 +111,7 @@ PACKAGE_LIST="bc bridge-utils build-essential cpufrequtils device-tree-compiler 
 	iw fake-hwclock wpasupplicant psmisc ntp parted rsync sudo curl linux-base dialog crda \
 	wireless-regdb ncurses-term python3-apt sysfsutils toilet u-boot-tools unattended-upgrades \
 	usbutils wireless-tools console-setup unicode-data openssh-server initramfs-tools \
-	ca-certificates resolvconf mc abootimg"
+	ca-certificates resolvconf"
 
 # development related packages. remove when they are not needed for building packages in chroot
 PACKAGE_LIST="$PACKAGE_LIST automake libwrap0-dev libssl-dev libusb-dev libusb-1.0-0-dev libnl-3-dev libnl-genl-3-dev"
@@ -120,33 +122,23 @@ PACKAGE_LIST_ADDITIONAL="alsa-utils btrfs-tools dosfstools hddtemp iotop iozone3
 	hdparm rfkill vlan sysstat bluez bluez-tools bash-completion hostapd git ethtool network-manager unzip ifenslave lirc \
 	libpam-systemd iperf3 software-properties-common libnss-myhostname f2fs-tools avahi-autoipd iputils-arping"
 
-PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-fuse xfonts-base xinit x11-xserver-utils lxtask xterm mirage thunar-volman galculator hexchat \
-	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl gksu bluetooth \
-	network-manager-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
-	paman pavumeter pulseaudio-module-gconf pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv gparted synaptic \
-	libreoffice-writer libreoffice-style-tango policykit-1 fbi profile-sync-daemon expect rcconf"
+PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-fuse xfonts-base xinit x11-xserver-utils xfce4 lxtask xterm mirage thunar-volman galculator hexchat \
+	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless xfce4-screenshooter libgnome2-perl gksu bluetooth \
+	network-manager-gnome xfce4-notifyd gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
+	paman pavumeter pulseaudio-module-gconf pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv \
+	libreoffice-writer libreoffice-style-tango libreoffice-gtk policykit-1 fbi profile-sync-daemon expect rcconf"
 
-#case $DISPLAY_MANAGER in
-#	nodm)
-#	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP nodm"
-#	;;
-
-#	lightdm)
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP lightdm-gtk-greeter lightdm-gtk-greeter lightdm-gtk-greeter-settings lightdm"
-#	;;
-
-#	*)
-#	exit_with_error "Unsupported display manager selected" "$DISPLAY_MANAGER"
-#	;;
-#esac
-
-# add XFCE or MATE
-case $BUILD_DESKTOP_DE in
-	xfce)
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP xfce4 xfce4-screenshooter xfce4-notifyd"
+case $DISPLAY_MANAGER in
+	nodm)
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP nodm"
 	;;
-	mate)
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets ubuntu-mate-lightdm-theme libreoffice-gtk"
+
+	lightdm)
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP lightdm lightdm-gtk-greeter"
+	;;
+
+	*)
+	exit_with_error "Unsupported display manager selected" "$DISPLAY_MANAGER"
 	;;
 esac
 
@@ -154,7 +146,7 @@ esac
 case $RELEASE in
 	jessie)
 	PACKAGE_LIST_RELEASE="less kbd"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma chromium policykit-1-gnome eject"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma iceweasel policykit-1-gnome eject"
 	;;
 	xenial)
 	PACKAGE_LIST_RELEASE="man-db wget nano linux-firmware"

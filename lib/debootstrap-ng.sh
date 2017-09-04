@@ -393,10 +393,10 @@ prepare_partitions()
 		display_alert "Creating rootfs" "$ROOTFS_TYPE"
 		check_loop_device "${LOOP}p${rootpart}"
 		mkfs.${mkfs[$ROOTFS_TYPE]} ${mkopts[$ROOTFS_TYPE]} ${LOOP}p${rootpart}
-		[[ $ROOTFS_TYPE == ext4 ]] && tune2fs -L ROOTFS -o journal_data_writeback ${LOOP}p${rootpart} > /dev/null
+		[[ $ROOTFS_TYPE == ext4 ]] && tune2fs -o journal_data_writeback ${LOOP}p${rootpart} > /dev/null
 		[[ $ROOTFS_TYPE == btrfs ]] && local fscreateopt="-o compress-force=zlib"
 		mount ${fscreateopt} ${LOOP}p${rootpart} $MOUNT/
-		local rootfs="LABEL=ROOTFS"
+		local rootfs="UUID=$(blkid -s UUID -o value ${LOOP}p${rootpart})"
 		echo "$rootfs / ${mkfs[$ROOTFS_TYPE]} defaults,noatime,nodiratime${mountopts[$ROOTFS_TYPE]} 0 1" >> $SDCARD/etc/fstab
 	fi
 	if [[ -n $bootpart ]]; then
@@ -405,7 +405,7 @@ prepare_partitions()
 		mkfs.${mkfs[$bootfs]} ${mkopts[$bootfs]} ${LOOP}p${bootpart}
 		mkdir -p $MOUNT/boot/
 		mount ${LOOP}p${bootpart} $MOUNT/boot/
-		echo "LABEL=BOOT /boot ${mkfs[$bootfs]} defaults${mountopts[$bootfs]} 0 2" >> $SDCARD/etc/fstab
+		echo "UUID=$(blkid -s UUID -o value ${LOOP}p${bootpart}) /boot ${mkfs[$bootfs]} defaults${mountopts[$bootfs]} 0 2" >> $SDCARD/etc/fstab
 	fi
 	[[ $ROOTFS_TYPE == nfs ]] && echo "/dev/nfs / nfs defaults 0 0" >> $SDCARD/etc/fstab
 	echo "tmpfs /tmp tmpfs defaults,nosuid 0 0" >> $SDCARD/etc/fstab
@@ -444,8 +444,8 @@ prepare_partitions()
 create_image()
 {
 	# stage: create file name
-	local version="Armbian_${REVISION}_${BOARD_NAME}_${DISTRIBUTION}_${RELEASE}_${VER/-$LINUXFAMILY/}_${BUILD_DESKTOP_DE}"
-#	[[ $BUILD_DESKTOP == yes ]] && version=${version}_desktop
+	local version="Armbian_${REVISION}_${BOARD^}_${DISTRIBUTION}_${RELEASE}_${BRANCH}_${VER/-$LINUXFAMILY/}"
+	[[ $BUILD_DESKTOP == yes ]] && version=${version}_desktop
 	[[ $ROOTFS_TYPE == nfs ]] && version=${version}_nfsboot
 
 	if [[ $ROOTFS_TYPE != nfs ]]; then

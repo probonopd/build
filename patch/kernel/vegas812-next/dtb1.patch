@@ -1,6 +1,6 @@
---- ./arch/arm/boot/dts/Makefile
-+++ ./arch/arm/boot/dts/Makefile
-@@ -1,1064 +1,17 @@
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -1,1061 +1,14 @@
  ifeq ($(CONFIG_OF),y)
  
 -dtb-$(CONFIG_ARCH_ALPINE) += \
@@ -294,6 +294,7 @@
 -dtb-$(CONFIG_ARCH_LPC32XX) += \
 -	lpc3250-ea3250.dtb \
 -	lpc3250-phy3250.dtb
++
  dtb-$(CONFIG_MACH_MESON6) += \
  	meson6-atv1200.dtb
  dtb-$(CONFIG_MACH_MESON8) += \
@@ -303,11 +304,8 @@
 -	pxa910-dkb.dtb \
 -	mmp2-brownstone.dtb
  dtb-$(CONFIG_MACH_MESON8B) += \
- 	meson8b-ec100.dtb \
  	meson8b-mxq.dtb \
  	meson8b-odroidc1.dtb
- dtb-$(CONFIG_MACH_MESON8M2) += \
--	meson8m2-m8s.dtb
 -dtb-$(CONFIG_ARCH_MPS2) += \
 -	mps2-an385.dtb \
 -	mps2-an399.dtb
@@ -1062,8 +1060,6 @@
 -dtb-$(CONFIG_ARCH_ASPEED) += aspeed-bmc-opp-palmetto.dtb \
 -	aspeed-bmc-opp-romulus.dtb \
 -	aspeed-ast2500-evb.dtb
-+	meson8m2-m8s.dtb \
-+	meson8m2-mxiii-plus.dtb
 +
  endif
  

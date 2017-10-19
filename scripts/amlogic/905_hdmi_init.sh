@@ -1,14 +1,14 @@
 #!/bin/sh
 
-bpp=32
-#bpp=24
+#bpp=32
+bpp=24
 
 #mode=1080p60hz
 mode=720p60hz
 
 case $mode in
 	1080*)
-	fbset -fb /dev/fb0 -g 1920 1080 1920 1080 $bpp
+	fbset -fb /dev/fb0 -g 1920 1080 1920 2160 $bpp
 	fbset -fb /dev/fb1 -g 32 32 32 32 32
 	echo $mode > /sys/class/display/mode
 	echo 0 > /sys/class/graphics/fb0/free_scale
@@ -18,7 +18,7 @@ case $mode in
 	echo 0 > /sys/class/graphics/fb1/free_scale
 	;;
       *)
-	fbset -fb /dev/fb0 -g 1280 720 1280 720 $bpp
+	fbset -fb /dev/fb0 -g 1280 720 1280 1440 $bpp
 	fbset -fb /dev/fb1 -g 32 32 32 32 32
 	echo $mode > /sys/class/display/mode
 	echo 0 > /sys/class/graphics/fb0/free_scale

@@ -267,6 +267,7 @@ fetch_from_repo()
 		# working directory is clean, nothing to do
 		display_alert "Up to date"
 	fi
+
 	if [[ -f .gitmodules ]]; then
 		display_alert "Updating submodules" "" "ext"
 		# FML: http://stackoverflow.com/a/17692710

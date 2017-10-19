@@ -35,7 +35,7 @@
 # Blank fb1 to prevent static noise
 #echo 1 > /sys/class/graphics/fb1/blank
 
-echo 0 > /sys/devices/virtual/graphics/fbcon/cursor_blink
+#echo 0 > /sys/devices/virtual/graphics/fbcon/cursor_blink
 
 #/etc/webmin/start &
 

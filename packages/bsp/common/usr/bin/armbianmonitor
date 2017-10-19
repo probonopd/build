@@ -255,6 +255,10 @@ MonitorMode() {
 	# - PMIC temperature if available
 	# - DC-IN voltage if available
 	# TODO: Format output nicely
+
+	# Allow armbianmonitor to return back to armbian-config
+	trap "exit 0" 0 1 2 3 15
+
 	LastUserStat=0
 	LastNiceStat=0
 	LastSystemStat=0
@@ -279,6 +283,7 @@ MonitorMode() {
 	[ -f "${Sensors}/pmictemp" ] && DisplayHeader="${DisplayHeader}   PMIC" || PMICTemp='n/a'
 	DCIN=$(CheckDCINVoltage)
 	[ -f "${DCIN}" ] && DisplayHeader="${DisplayHeader}   DC-IN" || DCIN='n/a'
+	[ -f /sys/devices/virtual/thermal/cooling_device0/cur_state ] && DisplayHeader="${DisplayHeader}  C.St."
 	echo -e "${DisplayHeader}\c"
 	Counter=0
 	while true ; do
@@ -299,7 +304,7 @@ MonitorMode() {
 				echo -e "\n$(date "+%H:%M:%S"): $(printf "%4s" ${CpuFreq})MHz $(printf "%5s" ${LoadAvg}) $(ProcessStats)\c"
 				;;
 			notavailable)
-				echo -e "\n$(date "+%H:%M:%S"):   ---    $(printf "%5s" ${LoadAvg}) $(ProcessStats)\c"
+				echo -e "\n$(date "+%H:%M:%S"):   ---     $(printf "%5s" ${LoadAvg}) $(ProcessStats)\c"
 				;;
 		esac
 		if [ "X${SocTemp}" != "Xn/a" ]; then
@@ -313,6 +318,7 @@ MonitorMode() {
 			(PMICTemp=$(awk '{printf ("%0.1f",$1/1000); }' <"${Sensors}/pmictemp") ; echo -e " $(printf "%4s" ${PMICTemp})°C\c")
 		[ "X${DCIN}" != "Xn/a" ] && \
 			(DCINvoltage=$(awk '{printf ("%0.2f",$1/1000000); }' <"${DCIN}") ; echo -e "  $(printf "%4s" ${DCINvoltage})V\c")
+		[ -f /sys/devices/virtual/thermal/cooling_device0/cur_state ] && printf "  %d/%d" $(cat /sys/devices/virtual/thermal/cooling_device0/cur_state) $(cat /sys/devices/virtual/thermal/cooling_device0/max_state)
 		sleep ${1:-5}
 	done
 } # MonitorMode

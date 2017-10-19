@@ -15,12 +15,13 @@ build_firmware()
 	local plugin_dir="armbian-firmware${FULL}"
 	[[ -d $SRC/cache/sources/$plugin_dir ]] && rm -rf $SRC/cache/sources/$plugin_dir
 
+	fetch_from_repo "https://github.com/armbian/firmware" "armbian-firmware-git" "branch:master"
 	if [[ -n $FULL ]]; then
 		fetch_from_repo "$plugin_repo" "$plugin_dir/lib/firmware" "branch:master"
 	fi
 	mkdir -p $SRC/cache/sources/$plugin_dir/lib/firmware
 	# overlay our firmware
-	cp -R $SRC/packages/extras/firmware/* $SRC/cache/sources/$plugin_dir/lib/firmware
+	cp -R $SRC/cache/sources/armbian-firmware-git/* $SRC/cache/sources/$plugin_dir/lib/firmware
 
 	# cleanup what's not needed for sure
 	rm -rf $SRC/cache/sources/$plugin_dir/lib/firmware/{amdgpu,amd-ucode,radeon,nvidia,matrox,.git}
@@ -43,7 +44,7 @@ build_firmware()
 	cd $SRC/cache/sources
 	# pack
 	mv armbian-firmware${FULL} armbian-firmware${FULL}_${REVISION}_${ARCH}
-	dpkg -b armbian-firmware${FULL}_${REVISION}_${ARCH} >> $DEST/debug/install.log 2>&1
+	fakeroot dpkg -b armbian-firmware${FULL}_${REVISION}_${ARCH} >> $DEST/debug/install.log 2>&1
 	mv armbian-firmware${FULL}_${REVISION}_${ARCH} armbian-firmware${FULL}
 	mv armbian-firmware${FULL}_${REVISION}_${ARCH}.deb $DEST/debs/ || display_alert "Failed moving firmware package" "" "wrn"
 }
@@ -56,5 +57,4 @@ REPLACE=""
 [[ ! -f $DEST/debs/armbian-firmware${FULL}_${REVISION}_${ARCH}.deb ]] && build_firmware
 
 # install basic firmware by default
-display_alert "Installing linux firmware" "$REVISION" "info"
-chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/armbian-firmware_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+install_deb_chroot "$DEST/debs/armbian-firmware_${REVISION}_${ARCH}.deb"

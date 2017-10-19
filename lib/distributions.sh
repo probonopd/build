@@ -97,30 +97,29 @@ install_common()
 	ff02::2     ip6-allrouters
 	EOF
 
-	display_alert "Installing kernel" "$CHOSEN_KERNEL" "info"
-	chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
+	install_deb_chroot "$DEST/debs/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb"
 
 	display_alert "Installing u-boot" "$CHOSEN_UBOOT" "info"
-	chroot $SDCARD /bin/bash -c "DEVICE=/dev/null dpkg -i /tmp/debs/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
+	install_deb_chroot "$DEST/debs/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb"
 
 	if [[ $INSTALL_HEADERS == yes ]]; then
-		display_alert "Installing headers" "${CHOSEN_KERNEL/image/headers}" "info"
-		chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/${CHOSEN_KERNEL/image/headers}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
+		install_deb_chroot "$DEST/debs/${CHOSEN_KERNEL/image/headers}_${REVISION}_${ARCH}.deb"
 	fi
 
-	if [[ -f $SDCARD/tmp/debs/armbian-firmware_${REVISION}_${ARCH}.deb ]]; then
-		display_alert "Installing generic firmware" "armbian-firmware" "info"
-		chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/armbian-firmware_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
+	if [[ -f $DEST/debs/armbian-firmware_${REVISION}_${ARCH}.deb ]]; then
+		install_deb_chroot "$DEST/debs/armbian-firmware_${REVISION}_${ARCH}.deb"
 	fi
 
-	if [[ -f $SDCARD/tmp/debs/${CHOSEN_KERNEL/image/dtb}_${REVISION}_${ARCH}.deb ]]; then
-		display_alert "Installing DTB" "${CHOSEN_KERNEL/image/dtb}" "info"
-		chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/${CHOSEN_KERNEL/image/dtb}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
+	if [[ -f $DEST/debs/${CHOSEN_KERNEL/image/dtb}_${REVISION}_${ARCH}.deb ]]; then
+		install_deb_chroot "$DEST/debs/${CHOSEN_KERNEL/image/dtb}_${REVISION}_${ARCH}.deb"
+	fi
+
+	if [[ -f $DEST/debs/${CHOSEN_KSRC}_${REVISION}_all.deb && $INSTALL_KSRC == yes ]]; then
+		install_deb_chroot "$DEST/debs/${CHOSEN_KSRC}_${REVISION}_all.deb"
 	fi
 
 	# install board support package
-	display_alert "Installing board support package" "$BOARD" "info"
-	chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/$RELEASE/${CHOSEN_ROOTFS}_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log 2>&1
+	install_deb_chroot "$DEST/debs/$RELEASE/${CHOSEN_ROOTFS}_${REVISION}_${ARCH}.deb"
 
 	# freeze armbian packages
 	if [[ $BSPFREEZE == yes ]]; then
@@ -143,7 +142,7 @@ install_common()
  	cp $SRC/config/armbian_first_run.txt $SDCARD/boot/armbian_first_run.txt
 
 	# switch to beta repository at this stage if building nightly images
-	[[ $IMAGE_TYPE == nightly ]] && echo "deb http://beta.armbian.com $RELEASE main utils ${RELEASE}-desktop" > $SDCARD/etc/apt/sources.list.d/armbian.list
+	[[ $IMAGE_TYPE == nightly ]] && echo "deb http://beta.armbian.com $RELEASE main ${RELEASE}-utils ${RELEASE}-desktop" > $SDCARD/etc/apt/sources.list.d/armbian.list
 
 	# disable low-level kernel messages for non betas
 	# TODO: enable only for desktop builds?
@@ -169,6 +168,14 @@ install_common()
 
 	# premit root login via SSH for the first boot
 	sed -i 's/#\?PermitRootLogin .*/PermitRootLogin yes/' $SDCARD/etc/ssh/sshd_config
+
+	if [[ -n $NM_IGNORE_DEVICES ]]; then
+		mkdir -p $SDCARD/etc/NetworkManager/conf.d/
+		cat <<-EOF > $SDCARD/etc/NetworkManager/conf.d/10-ignore-interfaces.conf
+		[keyfile]
+		unmanaged-devices=$NM_IGNORE_DEVICES
+		EOF
+	fi
 }
 
 install_distribution_specific()

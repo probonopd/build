@@ -55,7 +55,7 @@ compile_tools()
 		cd $tmpdir/armbian-tools-${RELEASE}_${REVISION}_${ARCH}
 		find . -type f ! -regex '.*.hg.*' ! -regex '.*?debian-binary.*' ! -regex '.*?DEBIAN.*' -printf '%P ' | xargs md5sum > DEBIAN/md5sums
 		cd $tmpdir
-		dpkg -b armbian-tools-${RELEASE}_${REVISION}_${ARCH} >/dev/null
+		fakeroot dpkg -b armbian-tools-${RELEASE}_${REVISION}_${ARCH} >/dev/null
 		mv $tmpdir/armbian-tools-${RELEASE}_${REVISION}_${ARCH}.deb $DEST/debs
 		cd $SRC/cache
 		rm -rf $tmpdir
@@ -90,5 +90,4 @@ if [[ ! -f $DEST/debs/armbian-tools-${RELEASE}_${REVISION}_${ARCH}.deb ]]; then
 	compile_tools
 fi
 
-display_alert "Installing" "armbian-tools-${RELEASE}_${REVISION}_${ARCH}.deb" "info"
-chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/armbian-tools-${RELEASE}_${REVISION}_${ARCH}.deb" >> $DEST/debug/tools-build.log
+install_deb_chroot "$DEST/debs/armbian-tools-${RELEASE}_${REVISION}_${ARCH}.deb"

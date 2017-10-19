@@ -2,6 +2,11 @@ ARCH=arm64
 KERNEL_IMAGE_TYPE=Image
 HAS_UUID_SUPPORT=yes
 OFFSET=2
+BOOTDELAY=0
+
+# Here we want to rename LINUXFAMILY from sun50iw1, sun50iw2, etc for next and dev branches
+# since this doesn't affect any stable images don't add any backwards compatibility hacks
+[[ $BRANCH != default ]] && LINUXFAMILY=sunxi64
 
 case $BRANCH in
 	default)
@@ -9,20 +14,38 @@ case $BRANCH in
 	;;
 
 	next)
+	ATFSOURCE='https://github.com/apritzel/arm-trusted-firmware'
+	ATFDIR='arm-trusted-firmware-sunxi-mainline'
+	ATFBRANCH='branch:allwinner-stable'
+	ATF_USE_GCC='> 6.3'
+	ATF_TARGET_MAP='PLAT=sun50iw1p1 DEBUG=1 bl31;;build/sun50iw1p1/debug/bl31.bin'
+
+	BOOTSOURCE=$MAINLINE_UBOOT_SOURCE
+	BOOTDIR=$MAINLINE_UBOOT_DIR
+	BOOTBRANCH=$MAINLINE_UBOOT_BRANCH
+	BOOTPATCHDIR='u-boot-sunxi'
+	UBOOT_USE_GCC='> 7.0'
+	UBOOT_TARGET_MAP=';;spl/sunxi-spl.bin u-boot.itb'
+	BOOTSCRIPT='boot-sun50i-next.cmd:boot.cmd'
+
+	KERNELSOURCE=$MAINLINE_KERNEL_SOURCE
+	KERNELBRANCH=$MAINLINE_KERNEL_BRANCH
+	KERNELDIR=$MAINLINE_KERNEL_DIR
+	KERNEL_USE_GCC='> 7.0'
+	KERNELPATCHDIR='sunxi-next'
 	;;
 
 	dev)
 	ATFSOURCE='https://github.com/apritzel/arm-trusted-firmware'
 	ATFDIR='arm-trusted-firmware-sunxi-mainline'
 	ATFBRANCH='branch:allwinner-stable'
-	ATF_USE_GCC='> 6.0'
+	ATF_USE_GCC='> 6.3'
 	ATF_TARGET_MAP='PLAT=sun50iw1p1 DEBUG=1 bl31;;build/sun50iw1p1/debug/bl31.bin'
 
 	BOOTSOURCE=$MAINLINE_UBOOT_SOURCE
 	BOOTDIR=$MAINLINE_UBOOT_DIR
-	#BOOTBRANCH=$MAINLINE_UBOOT_BRANCH
-	BOOTBRANCH='branch:master'
-	BOOTPATCHDIR='u-boot-sun50i-dev'
+	BOOTBRANCH=$MAINLINE_UBOOT_BRANCH
+	BOOTPATCHDIR='u-boot-sunxi'
 	UBOOT_USE_GCC='> 7.0'
 	UBOOT_TARGET_MAP=';;spl/sunxi-spl.bin u-boot.itb'
 	BOOTSCRIPT='boot-sun50i-next.cmd:boot.cmd'
@@ -31,8 +54,6 @@ case $BRANCH in
 	KERNELBRANCH='branch:sunxi64-4.13.y'
 	KERNELDIR='linux-sun50i-dev'
 	KERNEL_USE_GCC='> 7.0'
-	LINUXCONFIG='linux-sun50i-dev'
-	KERNELPATCHDIR='sun50i-dev'
 	;;
 esac
 

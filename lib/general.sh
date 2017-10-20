@@ -267,7 +267,6 @@ fetch_from_repo()
 		# working directory is clean, nothing to do
 		display_alert "Up to date"
 	fi
-
 	if [[ -f .gitmodules ]]; then
 		display_alert "Updating submodules" "" "ext"
 		# FML: http://stackoverflow.com/a/17692710
@@ -354,7 +353,7 @@ addtorepo()
 		if [[ -n $(aptly publish list -config=../config/aptly.conf -raw | awk '{print $(NF)}' | grep $release) ]]; then
 			aptly publish drop -config=../config/aptly.conf $release > /dev/null 2>&1
 		fi
-		#aptly db cleanup -config=../config/aptly.conf
+
 
 		if [[ $1 == remove ]]; then
 		# remove repository
@@ -362,24 +361,33 @@ addtorepo()
 			aptly db cleanup -config=../config/aptly.conf > /dev/null 2>&1
 		fi
 
+
 		if [[ $1 == replace ]]; then
 			local replace=true
 		else
 			local replace=false
 		fi
 
+
 		# create local repository if not exist
 		if [[ -z $(aptly repo list -config=../config/aptly.conf -raw | awk '{print $(NF)}' | grep $release) ]]; then
 			display_alert "Creating section" "$release" "info"
-			aptly repo create -config=../config/aptly.conf -distribution=$release -component=main -comment="Armbian main repository" $release
+			aptly repo create -config=../config/aptly.conf -distribution=$release -component="main" \
+			-comment="Armbian main repository" ${release}
 		fi
 		if [[ -z $(aptly repo list -config=../config/aptly.conf -raw | awk '{print $(NF)}' | grep "^utils") ]]; then
-			aptly repo create -config=../config/aptly.conf -distribution=$release -component="utils" -comment="Armbian utilities" utils
+			aptly repo create -config=../config/aptly.conf -distribution=$release -component="utils" \
+			-comment="Armbian utilities (backwards compatibility)" utils
+		fi
+		if [[ -z $(aptly repo list -config=../config/aptly.conf -raw | awk '{print $(NF)}' | grep "${release}-utils") ]]; then
+			aptly repo create -config=../config/aptly.conf -distribution=$release -component="${release}-utils" \
+			-comment="Armbian ${release} utilities" ${release}-utils
 		fi
 		if [[ -z $(aptly repo list -config=../config/aptly.conf -raw | awk '{print $(NF)}' | grep "${release}-desktop") ]]; then
-			aptly repo create -config=../config/aptly.conf -distribution=$release -component="${release}-desktop" -comment="Armbian desktop" ${release}-desktop
+			aptly repo create -config=../config/aptly.conf -distribution=$release -component="${release}-desktop" \
+			-comment="Armbian ${release} desktop" ${release}-desktop
 		fi
-		# create local repository if not exist
+
 
 		# adding main
 		if find $POT -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
@@ -389,33 +397,46 @@ addtorepo()
 			display_alert "Not adding $release" "main" "wrn"
 		fi
 
+		local COMPONENTS="main"
+
 		# adding main distribution packages
 		if find ${POT}${release} -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
-			display_alert "Adding to repository $release" "main" "ext"
+			display_alert "Adding to repository $release" "root" "ext"
 			aptly repo add -force-replace=$replace -config=../config/aptly.conf $release ${POT}${release}/*.deb
 		else
-			display_alert "Not adding $release" "main" "wrn"
+			display_alert "Not adding $release" "root" "wrn"
 		fi
 
-		# adding utils
-		if find ${POT}extra/utils -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
+		# adding old utils and new jessie-utils for backwards compatibility with older images
+		if find ${POT}extra/jessie-utils -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
 			display_alert "Adding to repository $release" "utils" "ext"
-			aptly repo add -config=../config/aptly.conf "utils" ${POT}extra/utils/*.deb
+			aptly repo add -config=../config/aptly.conf "utils" ${POT}extra/jessie-utils/*.deb
+			COMPONENTS="${COMPONENTS} utils"
 		else
 			display_alert "Not adding $release" "utils" "wrn"
+		fi
+
+		# adding release-specific utils
+		if find ${POT}extra/${release}-utils -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
+			display_alert "Adding to repository $release" "${release}-utils" "ext"
+			aptly repo add -config=../config/aptly.conf "${release}-utils" ${POT}extra/${release}-utils/*.deb
+			COMPONENTS="${COMPONENTS} ${release}-utils"
+		else
+			display_alert "Not adding $release" "${release}-utils" "wrn"
 		fi
 
 		# adding desktop
 		if find ${POT}extra/${release}-desktop -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
 			display_alert "Adding to repository $release" "desktop" "ext"
 			aptly repo add -force-replace=$replace -config=../config/aptly.conf "${release}-desktop" ${POT}extra/${release}-desktop/*.deb
+			COMPONENTS="${COMPONENTS} ${release}-desktop"
 		else
 			display_alert "Not adding $release" "desktop" "wrn"
 		fi
 
 		# publish
-		aptly publish -passphrase=$GPG_PASS -origin=Armbian -label=Armbian -config=../config/aptly.conf -component=main,utils,${release}-desktop \
-			--distribution=$release repo $release utils ${release}-desktop
+		aptly publish -passphrase=$GPG_PASS -origin=Armbian -label=Armbian -config=../config/aptly.conf -component=${COMPONENTS// /,} \
+			--distribution=$release repo $release ${COMPONENTS//main/} 2>/dev/null
 
 		if [[ $? -ne 0 ]]; then
 			display_alert "Publishing failed" "$release" "err"
@@ -465,7 +486,7 @@ prepare_host()
 	# packages list for host
 	# NOTE: please sync any changes here with the Dockerfile and Vagrantfile
 	local hostdeps="wget ca-certificates device-tree-compiler pv bc lzop zip binfmt-support build-essential ccache debootstrap ntpdate \
-	gawk gcc-arm-linux-gnueabihf qemu-user-static u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev \
+	gawk gcc-arm-linux-gnueabihf qemu-user-static u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev fakeroot \
 	parted pkg-config libncurses5-dev whiptail debian-keyring debian-archive-keyring f2fs-tools libfile-fcntllock-perl rsync libssl-dev \
 	nfs-kernel-server btrfs-tools ncurses-term p7zip-full kmod dosfstools libc6-dev-armhf-cross \
 	curl patchutils python liblz4-tool libpython2.7-dev linux-base swig libpython-dev \
@@ -508,6 +529,15 @@ prepare_host()
 	for packet in $hostdeps; do
 		if ! grep -q -x -e "$packet" <<< "$installed"; then deps+=("$packet"); fi
 	done
+
+	# distribution packages are buggy, download from author
+	if [[ ! -f /etc/apt/sources.list.d/aptly.list ]]; then
+		display_alert "Updating from external repository" "aptly" "info"
+		wget -qO - https://www.aptly.info/pubkey.txt | sudo apt-key add - >/dev/null 2>&1
+		echo "deb http://repo.aptly.info/ squeeze main" > /etc/apt/sources.list.d/aptly.list
+		apt-get -qq update
+		apt-get install aptly
+	fi
 
 	# sync clock
 	if [[ $SYNC_CLOCK != no ]]; then
@@ -552,17 +582,19 @@ prepare_host()
 
 	# download external Linaro compiler and missing special dependencies since they are needed for certain sources
 	local toolchains=(
-		"https://releases.linaro.org/archive/14.04/components/toolchain/binaries/gcc-linaro-arm-linux-gnueabihf-4.8-2014.04_linux.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/4.9-2017.01/aarch64-linux-gnu/gcc-linaro-4.9.4-2017.01-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/4.9-2017.01/arm-linux-gnueabi/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabi.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/4.9-2017.01/arm-linux-gnueabihf/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/aarch64-linux-gnu/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/arm-linux-gnueabi/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabi.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/arm-linux-gnueabihf/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/arm-linux-gnueabihf/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/aarch64-linux-gnu/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/7.1-2017.05/aarch64-linux-gnu/gcc-linaro-7.1.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://releases.linaro.org/components/toolchain/binaries/7.1-2017.05/arm-linux-gnueabihf/gcc-linaro-7.1.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-arm-linux-gnueabihf-4.8-2014.04_linux.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-4.9.4-2017.01-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabi.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabi.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-6.4.1-2017.08-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-6.4.1-2017.08-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-7.1.1-2017.08-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-7.1.1-2017.08-x86_64_arm-linux-gnueabihf.tar.xz"
 		)
 
 	for toolchain in ${toolchains[@]}; do

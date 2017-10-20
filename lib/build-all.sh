@@ -76,9 +76,16 @@ create_images_list()
 	#
 	# if parameter is true, than we build beta list
 	#
-	for board in $SRC/config/boards/*.conf; do
+local naming="$SRC/config/boards/*.conf";
+        if [[ "$EXPERT" == "yes" ]]; then naming=$naming" $SRC/config/boards/*.wip"; fi
+	for board in $naming; do
 		BOARD=$(basename $board | cut -d'.' -f1)
-		source $SRC/config/boards/$BOARD.conf
+		local file="${SRC}/config/boards/${BOARD}"
+		if [[ -f $file".conf" ]]; then source $file".conf"; fi
+		if [[ -f $file".wip"  ]]; then source $file".wip"; fi
+
+
+
 		if [[ -n $CLI_TARGET && -z $1 ]]; then
 
 			# RELEASES : BRANCHES
@@ -199,10 +206,10 @@ for line in "${buildlist[@]}"; do
 	unset LINUXFAMILY LINUXCONFIG KERNELDIR KERNELSOURCE KERNELBRANCH BOOTDIR BOOTSOURCE BOOTBRANCH ARCH UBOOT_USE_GCC KERNEL_USE_GCC \
 		CPUMIN CPUMAX UBOOT_VER KERNEL_VER GOVERNOR BOOTSIZE BOOTFS_TYPE UBOOT_TOOLCHAIN KERNEL_TOOLCHAIN PACKAGE_LIST_EXCLUDE KERNEL_IMAGE_TYPE \
 		write_uboot_platform family_tweaks family_tweaks_bsp setup_write_uboot_platform uboot_custom_postprocess atf_custom_postprocess \
-		BOOTSCRIPT UBOOT_TARGET_MAP LOCALVERSION UBOOT_COMPILER KERNEL_COMPILER \
+		BOOTSCRIPT UBOOT_TARGET_MAP LOCALVERSION UBOOT_COMPILER KERNEL_COMPILER BOOTCONFIG BOOTCONFIG_VAR_NAME BOOTCONFIG_DEFAULT BOOTCONFIG_NEXT BOOTCONFIG_DEV \
 		MODULES MODULES_NEXT MODULES_DEV INITRD_ARCH HAS_UUID_SUPPORT BOOTENV_FILE BOOTDELAY MODULES_BLACKLIST MODULES_BLACKLIST_NEXT \
 		MODULES_BLACKLIST_DEV MOUNT SDCARD BOOTPATCHDIR KERNELPATCHDIR buildtext RELEASE IMAGE_TYPE OVERLAY_PREFIX ASOUND_STATE \
-		ATF_COMPILER ATF_USE_GCC ATFSOURCE ATFDIR ATFBRANCH ATFSOURCEDIR
+		ATF_COMPILER ATF_USE_GCC ATFSOURCE ATFDIR ATFBRANCH ATFSOURCEDIR PACKAGE_LIST_RM NM_IGNORE_DEVICES DISPLAY_MANAGER
 
 	read BOARD BRANCH RELEASE BUILD_DESKTOP <<< $line
 	n=$[$n+1]

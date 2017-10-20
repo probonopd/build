@@ -13,9 +13,13 @@
 # use configuration files like config-default.conf to set the build configuration
 # check Armbian documentation for more info
 
-SRC=$(dirname $(realpath ${BASH_SOURCE}))
+SRC="$(dirname "$(realpath "${BASH_SOURCE}")")"
 # fallback for Trusty
-[[ -z $SRC ]] && SRC=$(pwd)
+[[ -z "${SRC}" ]] && SRC="$(pwd)"
+
+# check for whitespace in $SRC and exit for safety reasons
+grep -q "[[:space:]]" <<<"${SRC}" && { echo "\"${SRC}\" contains whitespace. Not supported. Aborting." >&2 ; exit 1 ; }
+
 cd $SRC
 
 if [[ -f $SRC/lib/general.sh && -L $SRC/main.sh ]]; then
@@ -53,7 +57,6 @@ if [[ ! -f $SRC/.ignore_changes ]]; then
 		echo -e "[\e[0;35m warn \x1B[0m] Can't update since you made changes to: \e[0;32m\n${CHANGED_FILES}\x1B[0m"
 		echo -e "Press \e[0;33m<Ctrl-C>\x1B[0m to abort compilation, \e[0;33m<Enter>\x1B[0m to ignore and continue"
 		read
-#	else
 	fi
 fi
 

@@ -39,4 +39,4 @@ build_aml_mali_905()
 
 # install mali by default
 display_alert "Installing aml-mali-905" "$REVISION" "info"
-chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/aml-mali-905_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+install_deb_chroot "$DEST/debs/aml-mali-905_${REVISION}_${ARCH}.deb"  >> $DEST/debug/install.log

@@ -39,4 +39,4 @@ build_kodi_aml()
 
 # install
 display_alert "Installing aml-kodi-905" "$REVISION" "info"
-chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/aml-kodi-905_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+install_deb_chroot "$DEST/debs/aml-kodi-905_${REVISION}_${ARCH}.deb"  >> $DEST/debug/install.log

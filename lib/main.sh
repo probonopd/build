@@ -41,6 +41,7 @@ backtitle="Armbian building script, http://www.armbian.com | Author: Igor Pecovn
 
 # Load libraries
 source $SRC/lib/debootstrap-ng.sh 			# System specific install
+source $SRC/lib/image-helpers.sh			# helpers for OS image building
 source $SRC/lib/distributions.sh 			# System specific install
 source $SRC/lib/desktop.sh 				# Desktop specific install
 source $SRC/lib/compilation.sh 				# Patching and compilation of kernel, uboot, ATF
@@ -247,6 +248,14 @@ fi
 
 source $SRC/lib/configuration.sh
 
+# optimize build time with 100% CPU usage
+CPUS=$(grep -c 'processor' /proc/cpuinfo)
+if [[ $USEALLCORES != no ]]; then
+	CTHREADS="-j$(($CPUS + $CPUS/2))"
+else
+	CTHREADS="-j1"
+fi
+
 start=`date +%s`
 
 [[ $CLEAN_LEVEL == *sources* ]] && cleaning "sources"
@@ -266,6 +275,8 @@ if [[ $IGNORE_UPDATES != yes ]]; then
 	fetch_from_repo "https://github.com/linux-sunxi/sunxi-tools" "sunxi-tools" "branch:master"
 	fetch_from_repo "https://github.com/armbian/config" "armbian-config" "branch:dev"
 	fetch_from_repo "https://github.com/rockchip-linux/rkbin" "rkbin-tools" "branch:master"
+	fetch_from_repo "https://github.com/MarvellEmbeddedProcessors/A3700-utils-marvell" "marvell-tools" "branch:A3700_utils-armada-17.10"
+	fetch_from_repo "https://github.com/armbian/odroidc2-blobs" "odroidc2-blobs" "branch:master"
 fi
 
 compile_sunxi_tools
@@ -278,6 +289,7 @@ DEB_BRANCH=${DEB_BRANCH:+${DEB_BRANCH}-}
 CHOSEN_UBOOT=linux-u-boot-${DEB_BRANCH}${BOARD}
 CHOSEN_KERNEL=linux-image-${DEB_BRANCH}${LINUXFAMILY}
 CHOSEN_ROOTFS=linux-${RELEASE}-root-${DEB_BRANCH}${BOARD}
+CHOSEN_KSRC=linux-source-${BRANCH}-${LINUXFAMILY}
 
 for option in $(tr ',' ' ' <<< "$CLEAN_LEVEL"); do
 	[[ $option != sources ]] && cleaning "$option"

@@ -63,9 +63,11 @@ create_board_package()
 	# postrm script
 	cat <<-EOF > $destination/DEBIAN/postrm
 	#!/bin/sh
-	[ remove = "\$1" ] || [ abort-install = "\$1" ] && dpkg-divert --package linux-${RELEASE}-root-${DEB_BRANCH}${BOARD} --remove --rename \
-		--divert /etc/mpv/mpv-dist.conf /etc/mpv/mpv.conf
-	systemctl disable log2ram.service armhwinfo.service >/dev/null 2>&1
+	if [ remove = "\$1" ] || [ abort-install = "\$1" ]; then
+		dpkg-divert --package linux-${RELEASE}-root-${DEB_BRANCH}${BOARD} --remove --rename \
+			--divert /etc/mpv/mpv-dist.conf /etc/mpv/mpv.conf
+		systemctl disable log2ram.service armhwinfo.service >/dev/null 2>&1
+	fi
 	exit 0
 	EOF
 
@@ -180,7 +182,7 @@ create_board_package()
 		echo "export VDPAU_OSD=1" > $destination/etc/profile.d/90-vdpau.sh
 		chmod 755 $destination/etc/profile.d/90-vdpau.sh
 	fi
-	if [[ ( $LINUXFAMILY == sun50i* || $LINUXFAMILY == sun8i ) && $BRANCH == dev ]]; then
+	if [[ ( $LINUXFAMILY == sunxi64* || $LINUXFAMILY == sun8i ) && $BRANCH != default ]]; then
 		# add mpv config for x11 output - slow, but it works compared to no config at all
 		mkdir -p $destination/etc/mpv/
 		cp $SRC/packages/bsp/mpv/mpv_mainline.conf $destination/etc/mpv/mpv.conf
@@ -216,7 +218,7 @@ create_board_package()
 
 	# create board DEB file
 	display_alert "Building package" "$CHOSEN_ROOTFS" "info"
-	dpkg-deb -b $destination ${destination}.deb
+	fakeroot dpkg-deb -b $destination ${destination}.deb
 	mkdir -p $DEST/debs/$RELEASE/
 	mv ${destination}.deb $DEST/debs/$RELEASE/
 	# cleanup

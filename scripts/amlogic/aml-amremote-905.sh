@@ -38,5 +38,5 @@ build_amremote()
 
 # install
 display_alert "Installing aml-amremote-905" "$REVISION" "info"
-chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/aml-amremote-905_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+install_deb_chroot "$DEST/debs/aml-amremote-905_${REVISION}_${ARCH}.deb"  >> $DEST/debug/install.log
 chroot $SDCARD /bin/bash -c "systemctl --no-reload enable amlogic-remotecfg.service >/dev/null 2>&1"

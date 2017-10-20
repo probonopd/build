@@ -10,7 +10,7 @@
 # common options
 # daily beta build contains date in subrevision
 if [[ $BETA == yes && -z $SUBREVISION ]]; then SUBREVISION="."$(date --date="tomorrow" +"%y%m%d"); fi
-REVISION="5.32$SUBREVISION" # all boards have same revision
+REVISION="5.34$SUBREVISION" # all boards have same revision
 ROOTPWD="1234" # Must be changed @first login
 MAINTAINER="Igor Pecovnik" # deb signature
 MAINTAINERMAIL="igor.pecovnik@****l.com" # deb signature
@@ -19,6 +19,7 @@ USEALLCORES=yes # Use all CPU cores for compiling
 EXIT_PATCHING_ERROR="" # exit patching if failed
 HOST="$(echo "$BOARD" | cut -f1 -d-)" # set hostname to the board
 ROOTFSCACHE_VERSION=3
+CHROOT_CACHE_VERSION=6
 [[ -z $DISPLAY_MANAGER ]] && DISPLAY_MANAGER=nodm
 ROOTFS_CACHE_MAX=8 # max number of rootfs cache, older ones will be cleaned up
 
@@ -42,7 +43,7 @@ else
 	MAINLINE_KERNEL_SOURCE='git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git'
 fi
 
-MAINLINE_KERNEL_BRANCH='branch:linux-4.12.y'
+MAINLINE_KERNEL_BRANCH='branch:linux-4.13.y'
 MAINLINE_KERNEL_DIR='linux-mainline'
 
 if [[ $USE_GITHUB_UBOOT_MIRROR == yes ]]; then
@@ -50,7 +51,7 @@ if [[ $USE_GITHUB_UBOOT_MIRROR == yes ]]; then
 else
 	MAINLINE_UBOOT_SOURCE='git://git.denx.de/u-boot.git'
 fi
-MAINLINE_UBOOT_BRANCH='tag:v2017.07'
+MAINLINE_UBOOT_BRANCH='tag:v2017.09'
 MAINLINE_UBOOT_DIR='u-boot'
 
 # Let's set default data if not defined in board configuration above
@@ -97,6 +98,9 @@ case $ARCH in
 	;;
 esac
 
+BOOTCONFIG_VAR_NAME=BOOTCONFIG_${BRANCH^^}
+[[ -n ${!BOOTCONFIG_VAR_NAME} ]] && BOOTCONFIG=${!BOOTCONFIG_VAR_NAME}
+
 [[ -z $LINUXCONFIG ]] && LINUXCONFIG="linux-${LINUXFAMILY}-${BRANCH}"
 
 [[ -z $BOOTPATCHDIR ]] && BOOTPATCHDIR="u-boot-$LINUXFAMILY"
@@ -109,7 +113,7 @@ PACKAGE_LIST="bc bridge-utils build-essential cpufrequtils device-tree-compiler 
 	iw fake-hwclock wpasupplicant psmisc ntp parted rsync sudo curl linux-base dialog crda \
 	wireless-regdb ncurses-term python3-apt sysfsutils toilet u-boot-tools unattended-upgrades \
 	usbutils wireless-tools console-setup unicode-data openssh-server initramfs-tools \
-	ca-certificates resolvconf mc abootimg"
+	ca-certificates resolvconf expect rcconf iptables mc abootimg"
 
 # development related packages. remove when they are not needed for building packages in chroot
 PACKAGE_LIST="$PACKAGE_LIST automake libwrap0-dev libssl-dev libusb-dev libusb-1.0-0-dev libnl-3-dev libnl-genl-3-dev"
@@ -117,14 +121,14 @@ PACKAGE_LIST="$PACKAGE_LIST automake libwrap0-dev libssl-dev libusb-dev libusb-1
 # Non-essential packages
 PACKAGE_LIST_ADDITIONAL="alsa-utils btrfs-tools dosfstools hddtemp iotop iozone3 stress sysbench screen ntfs-3g vim pciutils \
 	evtest htop pv lsof apt-transport-https libfuse2 libdigest-sha-perl libproc-processtable-perl aptitude dnsutils f3 haveged \
-	hdparm rfkill vlan sysstat bluez bluez-tools bash-completion hostapd git ethtool network-manager unzip ifenslave lirc \
+	hdparm rfkill vlan sysstat bash-completion hostapd git ethtool network-manager unzip ifenslave lirc \
 	libpam-systemd iperf3 software-properties-common libnss-myhostname f2fs-tools avahi-autoipd iputils-arping"
 
 PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-fuse xfonts-base xinit x11-xserver-utils lxtask xterm mirage thunar-volman galculator hexchat \
 	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl gksu bluetooth \
 	network-manager-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
-	paman pavumeter pulseaudio-module-gconf pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv gparted synaptic \
-	libreoffice-writer libreoffice-style-tango policykit-1 fbi profile-sync-daemon expect rcconf"
+	paman pavumeter pulseaudio-module-gconf bluez bluez-tools pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv gparted synaptic \
+	libreoffice-writer libreoffice-style-tango policykit-1 fbi profile-sync-daemon"
 
 #case $DISPLAY_MANAGER in
 #	nodm)
@@ -163,7 +167,7 @@ case $RELEASE in
 	;;
 	stretch)
 	PACKAGE_LIST_RELEASE="man-db less kbd net-tools netcat-openbsd"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium tango-icon-theme paprefs numix-gtk-theme"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium tango-icon-theme paprefs numix-gtk-theme dbus-x11"
 	;;
 esac
 
@@ -192,6 +196,11 @@ if [[ $ARCH == arm64 ]]; then
 	PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/thunderbird/thunderbird:armhf}"
 fi
 [[ $BUILD_DESKTOP == yes ]] && PACKAGE_LIST="$PACKAGE_LIST $PACKAGE_LIST_DESKTOP"
+
+# remove any packages defined in PACKAGE_LIST_RM in lib.config
+if [[ -n $PACKAGE_LIST_RM ]]; then
+	PACKAGE_LIST=$(sed -r "s/\b($(tr ' ' '|' <<< $PACKAGE_LIST_RM))\b//g" <<< $PACKAGE_LIST)
+fi
 
 # debug
 cat <<-EOF >> $DEST/debug/output.log

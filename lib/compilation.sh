@@ -17,9 +17,6 @@
 # find_toolchain
 # advanced_patch
 # process_patch_file
-# install_external_applications
-# write_uboot
-# customize_image
 # userpatch_create
 # overlayfs_wrapper
 
@@ -228,7 +225,7 @@ compile_uboot()
 	[[ -n $atftempdir && -f $atftempdir/license.md ]] && cp $atftempdir/license.md $SRC/.tmp/$uboot_name/usr/lib/u-boot/LICENSE.atf
 
 	display_alert "Building deb" "${uboot_name}.deb" "info"
-	(cd $SRC/.tmp/; eval 'dpkg -b $uboot_name 2>&1' ${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'})
+	fakeroot dpkg-deb -b $SRC/.tmp/$uboot_name $SRC/.tmp/${uboot_name}.deb >> $DEST/debug/output.log 2>&1
 	rm -rf $SRC/.tmp/$uboot_name
 	[[ -n $$atftempdir ]] && rm -rf $atftempdir
 
@@ -269,13 +266,17 @@ compile_kernel()
 	local version=$(grab_version "$kerneldir")
 
 	# create linux-source package - with already patched sources
-	local sources_pkg_dir=$SRC/.tmp/linux-source-${BRANCH}-${LINUXFAMILY}_${REVISION}_all
+	local sources_pkg_dir=$SRC/.tmp/${CHOSEN_KSRC}_${REVISION}_all
 	rm -rf ${sources_pkg_dir}
 	mkdir -p $sources_pkg_dir/usr/src/ $sources_pkg_dir/usr/share/doc/linux-source-${version}-${LINUXFAMILY} $sources_pkg_dir/DEBIAN
 
+###### 20171019 ToDO add var CREATE_DEB_LINUX_SOURCE
 #	display_alert "Compressing sources for the linux-source package"
-#	tar cp --directory="$kerneldir" --exclude='./.git/' . | pixz -4 > $sources_pkg_dir/usr/src/linux-source-${version}-${LINUXFAMILY}.tar.xz
+#	tar cp --directory="$kerneldir" --exclude='./.git/' --owner=root . \
+#		 | pv -p -b -r -s $(du -sb "$kerneldir" --exclude=='./.git/' | cut -f1) \
+#		| pixz -4 > $sources_pkg_dir/usr/src/linux-source-${version}-${LINUXFAMILY}.tar.xz
 #	cp COPYING $sources_pkg_dir/usr/share/doc/linux-source-${version}-${LINUXFAMILY}/LICENSE
+###### 20171019
 
 	# create patch for manual source changes in debug mode
 	[[ $CREATE_PATCHES == yes ]] && userpatch_create "kernel"
@@ -319,7 +320,7 @@ compile_kernel()
 #		fi
 	else
 		make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" oldconfig
-		make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" menuconfig
+		make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" ${KERNEL_MENUCONFIG:-menuconfig}
 		# store kernel config in easily reachable place
 		display_alert "Exporting new kernel config" "$DEST/$LINUXCONFIG.config" "info"
 		cp .config $DEST/config/$LINUXCONFIG.config
@@ -361,19 +362,19 @@ compile_kernel()
 		${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
 	cat <<-EOF > $sources_pkg_dir/DEBIAN/control
-	Package: linux-source-${version}-${LINUXFAMILY}
-	Version: ${version}-${LINUXFAMILY}+${REVISION}
+	Package: linux-source-${version}-${BRANCH}-${LINUXFAMILY}
+	Version: ${version}-${BRANCH}-${LINUXFAMILY}+${REVISION}
 	Architecture: all
 	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
 	Section: kernel
 	Priority: optional
 	Depends: binutils, coreutils
-	Provides: linux-source
+	Provides: linux-source, linux-source-${version}-${LINUXFAMILY}
 	Recommends: gcc, make
 	Description: This package provides the source code for the Linux kernel $version
 	EOF
 
-	dpkg-deb -z0 -b $sources_pkg_dir ${sources_pkg_dir}.deb
+	fakeroot dpkg-deb -z0 -b $sources_pkg_dir ${sources_pkg_dir}.deb
 	mv ${sources_pkg_dir}.deb $DEST/debs/
 	rm -rf $sources_pkg_dir
 
@@ -512,7 +513,7 @@ advanced_patch()
 				if [[ -s ${dir%%:*}/$name ]]; then
 					process_patch_file "${dir%%:*}/$name" "${dir##*:}"
 				else
-					display_alert "... ${dir##*:} $name" "skipped"
+					display_alert "* ${dir##*:} $name" "skipped"
 				fi
 				break # next name
 			fi
@@ -538,56 +539,12 @@ process_patch_file()
 	patch --batch --silent -p1 -N < $patch >> $DEST/debug/patching.log 2>&1
 
 	if [[ $? -ne 0 ]]; then
-		display_alert "... $status $(basename $patch)" "failed" "wrn"
+		display_alert "* $status $(basename $patch)" "failed" "wrn"
 		[[ $EXIT_PATCHING_ERROR == yes ]] && exit_with_error "Aborting due to" "EXIT_PATCHING_ERROR"
 	else
-		display_alert "... $status $(basename $patch)" "succeeded" "info"
+		display_alert "* $status $(basename $patch)" "" "info"
 	fi
 	echo >> $DEST/debug/patching.log
-}
-
-install_external_applications()
-{
-#--------------------------------------------------------------------------------------------------------------------------------
-# Install external applications example
-#--------------------------------------------------------------------------------------------------------------------------------
-	display_alert "Installing extra applications and drivers" "" "info"
-
-	for plugin in $SRC/packages/extras/*.sh; do
-		source $plugin
-	done
-}
-
-# write_uboot <loopdev>
-#
-# writes u-boot to loop device
-# Parameters:
-# loopdev: loop device with mounted rootfs image
-write_uboot()
-{
-	local loop=$1
-	display_alert "Writing U-boot bootloader" "$loop" "info"
-	mkdir -p /tmp/u-boot/
-	dpkg -x ${DEST}/debs/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb /tmp/u-boot/
-	write_uboot_platform "/tmp/u-boot/usr/lib/${CHOSEN_UBOOT}_${REVISION}_${ARCH}" "$loop"
-	[[ $? -ne 0 ]] && exit_with_error "U-boot bootloader failed to install" "@host"
-	rm -r /tmp/u-boot/
-	sync
-}
-
-customize_image()
-{
-	# for users that need to prepare files at host
-	[[ -f $SRC/userpatches/customize-image-host.sh ]] && source $SRC/userpatches/customize-image-host.sh
-	cp $SRC/userpatches/customize-image.sh $SDCARD/tmp/customize-image.sh
-	chmod +x $SDCARD/tmp/customize-image.sh
-	mkdir -p $SDCARD/tmp/overlay
-	# util-linux >= 2.27 required
-	mount -o bind,ro $SRC/userpatches/overlay $SDCARD/tmp/overlay
-	display_alert "Calling image customization script" "customize-image.sh" "info"
-	chroot $SDCARD /bin/bash -c "/tmp/customize-image.sh $RELEASE $LINUXFAMILY $BOARD $BUILD_DESKTOP"
-	umount $SDCARD/tmp/overlay
-	mountpoint -q $SDCARD/tmp/overlay || rm -r $SDCARD/tmp/overlay
 }
 
 userpatch_create()

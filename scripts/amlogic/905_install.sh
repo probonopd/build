@@ -116,7 +116,8 @@ abootimg -u /dev/boot -k $IMAGE_KERNEL
 abootimg -u /dev/boot -r $IMAGE_INITRD
 
 if [ -f $IMAGE_DTB ] ; then
-    abootimg -u /dev/boot -s $IMAGE_DTB
+#    abootimg -u /dev/boot -s $IMAGE_DTB
+    dd if="$IMAGE_DTB" of="/dev/dtb" bs=262144 status=none && sync
 fi
 
 echo "done."

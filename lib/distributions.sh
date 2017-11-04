@@ -82,6 +82,9 @@ install_common()
 	[[ -n $OVERLAY_PREFIX && -f $SDCARD/boot/armbianEnv.txt ]] && \
 		echo "overlay_prefix=$OVERLAY_PREFIX" >> $SDCARD/boot/armbianEnv.txt
 
+	[[ -n $DEFAULT_OVERLAYS && -f $SDCARD/boot/armbianEnv.txt ]] && \
+		echo "overlays=${DEFAULT_OVERLAYS//,/ }" >> $SDCARD/boot/armbianEnv.txt
+
 	# initial date for fake-hwclock
 	date -u '+%Y-%m-%d %H:%M:%S' > $SDCARD/etc/fake-hwclock.data
 
@@ -198,7 +201,7 @@ install_distribution_specific()
 		# remove doubled uname from motd
 		[[ -f $SDCARD/etc/update-motd.d/10-uname ]] && rm $SDCARD/etc/update-motd.d/10-uname
 		# rc.local is not existing in stretch but we might need it
-		cat <<-EOF >$SDCARD/etc/rc.local
+		cat <<-EOF > $SDCARD/etc/rc.local
 		#!/bin/sh -e
 		#
 		# rc.local
@@ -214,7 +217,7 @@ install_distribution_specific()
 
 		exit 0
 		EOF
-		chroot $SDCARD /bin/bash -c "chmod +x /etc/rc.local; systemctl daemon-reload"
+		chmod +x $SDCARD/etc/rc.local
 		;;
 	esac
 }

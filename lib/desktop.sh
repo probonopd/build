@@ -16,7 +16,7 @@ install_desktop ()
 
 	if [[ $RELEASE == xenial ]]; then
 		# install optimized firefox configuration
-		# cp $SRC/config/firefox.conf $SDCARD/etc/firefox/syspref.js
+		# cp $SRC/packages/blobs/desktop/firefox.conf $SDCARD/etc/firefox/syspref.js
 		# install optimized chromium configuration
 		cp $SRC/config/chromium.conf $SDCARD/etc/chromium-browser/default
 	fi
@@ -34,7 +34,7 @@ install_desktop ()
 	cp $SRC/packages/blobs/desktop/wallpapers/armbian*.jpg $SDCARD/usr/share/backgrounds/xfce/
 
 	# Install custom icons and theme
-	install_deb_chroot "$SRC/packages/blobs/desktop/vibrancy-colors_2.4-trusty-Noobslab.com_all.deb"
+	install_deb_chroot "$SRC/packages/blobs/desktop/vibrancy-colors_2.7~xenial~Noobslab.com_all.deb"
 
 	# Enable network manager
 	if [[ -f $SDCARD/etc/NetworkManager/NetworkManager.conf ]]; then

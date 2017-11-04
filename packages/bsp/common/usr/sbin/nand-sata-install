@@ -2,12 +2,10 @@
 #
 # Copyright (c) Authors: http://www.armbian.com/authors
 #
-# NAND, eMMC, SATA and USB Armbian installer
-#
-# Remarks:
-# nand boot za a10: git clone -b dev/a10-nand-ext4 https://github.com/mmplayer/u-boot-sunxi --depth 1
-# Should work with: Cubietruck, Cubieboards, BananaPi, Olimex Lime+Lime2+Micro, Hummingboard, ...
-#
+# Tool to transfer the rootfs of an already running Armbian installation from SD card
+# to NAND, eMMC, SATA or USB storage. In case of eMMC it's also possible to transfer
+# the bootloader to eMMC in a single step so from then on running without SD card is
+# possible.
 
 # Import:
 # DIR: path to u-boot directory
@@ -172,7 +170,6 @@ create_armbian()
 		e2fsck -f /dev/nand2 >/dev/null 2>&1
 	fi
 
-
 	# Boot from eMMC, root = eMMC or SATA / USB
 	#
 	if [[ $2 == ${emmccheck}p* || $1 == ${emmccheck}p* ]]; then
@@ -213,8 +210,8 @@ create_armbian()
 
 		if [[ $eMMCFilesystemChoosen == "btrfs" ]]; then
 			echo "$targetuuid	/		$choosen_fs	${mountopts[$choosen_fs]}" >> ${TempDir}/rootfs/etc/fstab
-			# swap file not supported under btrfs, we made a partition
-			sed -e 's,/var/swap.*,'$emmcswapuuid' 	none		swap	sw								0	0,g' -i ${TempDir}/rootfs/etc/fstab
+			# swap file not supported under btrfs but we might have made a partition
+			[[ -n ${emmcswapuuid} ]] && sed -e 's,/var/swap.*,'$emmcswapuuid' 	none		swap	sw								0	0,g' -i ${TempDir}/rootfs/etc/fstab
 			sed -e 's,rootfstype=.*,rootfstype='$eMMCFilesystemChoosen',g' -i ${TempDir}/bootfs/boot/armbianEnv.txt
 		else
 			sed -e 's,rootfstype=.*,rootfstype='$choosen_fs',g' -i ${TempDir}/bootfs/boot/armbianEnv.txt
@@ -252,9 +249,11 @@ create_armbian()
 		echo "${root_uuid}	/media/mmcboot	ext4    ${mountopts[ext4]}" >> ${TempDir}/rootfs/etc/fstab
 		echo "/media/mmcboot/boot   				/boot		none	bind								0       0" >> ${TempDir}/rootfs/etc/fstab
 		echo "$satauuid	/		$FilesystemChoosen	${mountopts[$FilesystemChoosen]}" >> ${TempDir}/rootfs/etc/fstab
-		# recreate swap file
-		fallocate -l 128M ${TempDir}/rootfs/var/swap || dd if=/dev/zero of=${TempDir}/rootfs/var/swap bs=1M count=128 status=noxfer
-		mkswap ${TempDir}/rootfs/var/swap
+		# recreate swap file if already existing (might be missing since zram only)
+		if [ -f /var/swap ]; then
+			fallocate -l 128M ${TempDir}/rootfs/var/swap || dd if=/dev/zero of=${TempDir}/rootfs/var/swap bs=1M count=128 status=noxfer
+			mkswap ${TempDir}/rootfs/var/swap
+		fi
 	fi
 
 	# recreate OMV mounts at destination if needed
@@ -277,6 +276,7 @@ create_armbian()
 	umountdevice "/dev/sda"
 } # create_armbian
 
+
 # Accept device as parameter: for example /dev/sda unmounts all their mounts
 umountdevice()
 {
@@ -292,12 +292,31 @@ umountdevice()
 	fi
 } # umountdevice
 
+show_nand_warning()
+{
+	local temp_rc=$(mktemp)
+	cat <<-'EOF' > $temp_rc
+	screen_color = (WHITE,RED,ON)
+	EOF
+	local warn_text="You are installing the system to sunxi NAND.
+
+	This is not recommended as NAND has \Z1worse performance
+	and reliability\Zn than a good SD card.
+
+	You have been warned."
+
+	DIALOGRC=$temp_rc dialog --title "NAND warning" --backtitle "$backtitle" --colors \
+		--ok-label "I understand and agree" --msgbox "$warn_text" 10 70
+}
 
 # formatting sunxi NAND - no parameters, fixed solution.
 #
 formatnand()
 {
 	[[ ! -e /dev/nand ]] && echo "NAND error" && exit 0
+
+	show_nand_warning
+
 	dialog --title "$title" --backtitle "$backtitle" --infobox "\nFormating ... up to one minute." 5 40
 	if [[ $DEVICE_TYPE = a20 ]]; then
 		(echo y;) | sunxi-nand-part -f a20 /dev/nand 65536 'bootloader 65536' 'linux 0' >> $logfile 2>&1
@@ -346,19 +365,35 @@ formatemmc()
 	dialog --title "$title" --backtitle "$backtitle" --infobox "\nFormating $1 to $eMMCFilesystemChoosen ... please wait." 5 60
 	# we can't boot from btrfs
 	if [[ $eMMCFilesystemChoosen == "btrfs" ]]; then
-		parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 2048s 126975s
-		parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 126976s 389119s
-		parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 389120s ${LASTSECTOR}s
-		partprobe $1
-		mkfs.ext4 ${mkopts[ext4]} $1"p1" >> $logfile 2>&1
-		mkswap $1"p2" >> $logfile 2>&1
-		mkfs.btrfs $1"p3" ${mkopts[$eMMCFilesystemChoosen]} >> $logfile 2>&1
-		emmcbootuuid=$(blkid -o export $1"p1" | grep -w UUID)
-		emmcswapuuid=$(blkid -o export $1"p2" | grep -w UUID)
-		emmcuuid=$(blkid -o export $1"p3" | grep -w UUID)
-		dest_root=$emmccheck"p3"
+		# check whether swap is currently defined and a new swap partition is needed
+		grep -q swap /etc/fstab
+		case $? in
+			0)
+				parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 8192s 139263s
+				parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 139264s 401407s
+				parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 401408s ${LASTSECTOR}s
+				partprobe $1
+				mkfs.ext4 ${mkopts[ext4]} $1"p1" >> $logfile 2>&1
+				mkswap $1"p2" >> $logfile 2>&1
+				mkfs.btrfs $1"p3" ${mkopts[$eMMCFilesystemChoosen]} >> $logfile 2>&1
+				emmcbootuuid=$(blkid -o export $1"p1" | grep -w UUID)
+				emmcswapuuid=$(blkid -o export $1"p2" | grep -w UUID)
+				emmcuuid=$(blkid -o export $1"p3" | grep -w UUID)
+				dest_root=$emmccheck"p3"
+				;;
+			*)
+				parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 8192s 139263s
+				parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 139264s ${LASTSECTOR}s
+				partprobe $1
+				mkfs.ext4 ${mkopts[ext4]} $1"p1" >> $logfile 2>&1
+				mkfs.btrfs $1"p2" ${mkopts[$eMMCFilesystemChoosen]} >> $logfile 2>&1
+				emmcbootuuid=$(blkid -o export $1"p1" | grep -w UUID)
+				emmcuuid=$(blkid -o export $1"p2" | grep -w UUID)
+				dest_root=$emmccheck"p2"
+				;;
+		esac
 	else
-		parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 2048s ${LASTSECTOR}s
+		parted -s $1 -- mkpart primary $eMMCFilesystemChoosen 8192s ${LASTSECTOR}s
 		partprobe $1
 		mkfs.${eMMCFilesystemChoosen} ${mkopts[$eMMCFilesystemChoosen]} $1"p1" >> $logfile 2>&1
 		emmcuuid=$(blkid -o export $1"p1" | grep -w UUID)

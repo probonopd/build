@@ -11,7 +11,7 @@ UBOOT_USE_GCC='> 7.0'
 UBOOT_FW_ENV='0x88000,0x20000' # /etc/fw_env.config offset and env size
 
 HAS_UUID_SUPPORT=yes
-BOOTDELAY=0
+BOOTDELAY=1
 
 # Here we want to rename LINUXFAMILY from sun4i, sun5i, etc for next and dev branches
 # except for sun8i-dev which is separate from sunxi-dev
@@ -25,7 +25,7 @@ case $BRANCH in
 
 	next)
 	KERNELSOURCE=$MAINLINE_KERNEL_SOURCE
-	KERNELBRANCH=$MAINLINE_KERNEL_BRANCH
+	KERNELBRANCH='branch:linux-4.13.y'
 	KERNELDIR=$MAINLINE_KERNEL_DIR
 
 	GOVERNOR=ondemand
@@ -39,6 +39,14 @@ case $BRANCH in
 	KERNEL_USE_GCC='> 7.0'
 	;;
 esac
+
+family_tweaks()
+{
+	# execute specific tweaks function if present
+	[[ $(type -t family_tweaks_s) == function ]] && family_tweaks_s
+
+	cp $SRC/packages/blobs/splash/armbian-u-boot-24.bmp $SDCARD/boot/boot.bmp
+}
 
 write_uboot_platform()
 {

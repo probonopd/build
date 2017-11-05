@@ -139,7 +139,8 @@ create_sources_list()
 	deb http://security.debian.org/ ${release}/updates main contrib non-free
 	#deb-src http://security.debian.org/ ${release}/updates main contrib non-free
 
-	deb http://ftp.de.debian.org/debian testing main
+	# add test repo
+#	deb http://ftp.de.debian.org/debian testing main
 
 	EOF
 	;;
@@ -533,7 +534,7 @@ prepare_host()
 	# distribution packages are buggy, download from author
 	if [[ ! -f /etc/apt/sources.list.d/aptly.list ]]; then
 		display_alert "Updating from external repository" "aptly" "info"
-		wget -qO - https://www.aptly.info/pubkey.txt | sudo apt-key add - >/dev/null 2>&1
+		wget -qO - https://www.aptly.info/pubkey.txt | apt-key add - >/dev/null 2>&1
 		echo "deb http://repo.aptly.info/ squeeze main" > /etc/apt/sources.list.d/aptly.list
 		apt-get -qq update
 		apt-get install aptly

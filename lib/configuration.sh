@@ -42,8 +42,6 @@ if [[ $USE_MAINLINE_GOOGLE_MIRROR == yes ]]; then
 else
 	MAINLINE_KERNEL_SOURCE='git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git'
 fi
-
-MAINLINE_KERNEL_BRANCH='branch:linux-4.13.y'
 MAINLINE_KERNEL_DIR='linux-mainline'
 
 if [[ $USE_GITHUB_UBOOT_MIRROR == yes ]]; then
@@ -55,7 +53,7 @@ MAINLINE_UBOOT_BRANCH='tag:v2017.09'
 MAINLINE_UBOOT_DIR='u-boot'
 
 # Let's set default data if not defined in board configuration above
-[[ -z $OFFSET ]] && OFFSET=1 # Bootloader space in MB (1 x 2048 = default)
+[[ -z $OFFSET ]] && OFFSET=4 # offset to 1st partition (we use 4MiB boundaries by default)
 ARCH=armhf
 KERNEL_IMAGE_TYPE=zImage
 SERIALCON=ttyS0
@@ -121,12 +119,12 @@ PACKAGE_LIST="$PACKAGE_LIST automake libwrap0-dev libssl-dev libusb-dev libusb-1
 # Non-essential packages
 PACKAGE_LIST_ADDITIONAL="alsa-utils btrfs-tools dosfstools hddtemp iotop iozone3 stress sysbench screen ntfs-3g vim pciutils \
 	evtest htop pv lsof apt-transport-https libfuse2 libdigest-sha-perl libproc-processtable-perl aptitude dnsutils f3 haveged \
-	hdparm rfkill vlan sysstat bash-completion hostapd git ethtool network-manager unzip ifenslave lirc \
+	hdparm rfkill vlan sysstat bash-completion hostapd git ethtool network-manager unzip ifenslave command-not-found lirc \
 	libpam-systemd iperf3 software-properties-common libnss-myhostname f2fs-tools avahi-autoipd iputils-arping"
 
 PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-fuse xfonts-base xinit x11-xserver-utils lxtask xterm mirage thunar-volman galculator hexchat \
 	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl gksu bluetooth \
-	network-manager-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
+	network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
 	paman pavumeter pulseaudio-module-gconf bluez bluez-tools pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv gparted synaptic \
 	libreoffice-writer libreoffice-style-tango policykit-1 fbi profile-sync-daemon"
 
@@ -136,7 +134,7 @@ PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-f
 #	;;
 
 #	lightdm)
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP lightdm-gtk-greeter lightdm-gtk-greeter lightdm-gtk-greeter-settings lightdm"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings"
 #	;;
 
 #	*)
@@ -147,7 +145,7 @@ PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-f
 # add XFCE or MATE
 case $BUILD_DESKTOP_DE in
 	xfce)
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP xfce4 xfce4-screenshooter xfce4-notifyd"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP xfce4 xfce4-screenshooter xfce4-notifyd xfce4-terminal libreoffice-gtk"
 	;;
 	mate)
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets ubuntu-mate-lightdm-theme libreoffice-gtk mozo"
@@ -161,7 +159,7 @@ case $RELEASE in
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma chromium policykit-1-gnome eject"
 	;;
 	xenial)
-	PACKAGE_LIST_RELEASE="man-db wget nano linux-firmware"
+	PACKAGE_LIST_RELEASE="man-db wget nano linux-firmware zram-config"
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser gnome-icon-theme-full tango-icon-theme language-selector-gnome paprefs numix-gtk-theme"
 	[[ $ARCH == armhf ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-utils ubuntu-mate-welcome mate-settings-daemon"
 	;;

@@ -374,11 +374,15 @@ compile_kernel()
 	Description: This package provides the source code for the Linux kernel $version
 	EOF
 
-	fakeroot dpkg-deb -z0 -b $sources_pkg_dir ${sources_pkg_dir}.deb
-	mv ${sources_pkg_dir}.deb $DEST/debs/
+	if [[ $BUILD_KSRC != no ]]; then
+		fakeroot dpkg-deb -z0 -b $sources_pkg_dir ${sources_pkg_dir}.deb
+		mv ${sources_pkg_dir}.deb $DEST/debs/
+	fi
 	rm -rf $sources_pkg_dir
 
 	cd ..
+	# remove firmare image packages here - easier than patching ~40 packaging scripts at once
+	rm -f linux-firmware-image-*.deb
 	mv *.deb $DEST/debs/ || exit_with_error "Failed moving kernel DEBs"
 }
 

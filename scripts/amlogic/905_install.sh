@@ -115,12 +115,14 @@ abootimg -x /dev/boot
 abootimg -u /dev/boot -k $IMAGE_KERNEL
 abootimg -u /dev/boot -r $IMAGE_INITRD
 
+echo "done."
+
 if [ -f $IMAGE_DTB ] ; then
 #    abootimg -u /dev/boot -s $IMAGE_DTB
+    echo "Writing new dtb ..."
     dd if="$IMAGE_DTB" of="/dev/dtb" bs=262144 status=none && sync
+    echo "done."
 fi
-
-echo "done."
 
 echo "Write env bootargs"
 /usr/sbin/fw_setenv initargs "root=/dev/data rootflags=data=writeback rw console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.repair=yes net.ifnames=0 mac=\${mac}"

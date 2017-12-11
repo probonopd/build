@@ -1,5 +1,5 @@
 setenv condev "console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0"
-setenv bootargs "root=LABEL=ROOTFS rootfstype=ext4 rootflags=data=writeback rw ${condev} fsck.repair=yes net.ifnames=0 mac=${mac} logo=osd1,loaded,0x7900000,1080p,full"
+setenv bootargs "root=LABEL=ROOTFS rootfstype=ext4 rootflags=data=writeback rw ${condev} fsck.repair=yes net.ifnames=0 mac=${mac} logo=osd1,loaded,0x7900000,${hdmimode},full"
 setenv kernel_loadaddr "0x14000000"
 setenv dtb_loadaddr "0x11800000"
 setenv initrd_loadaddr "0x15000000"

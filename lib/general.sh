@@ -345,30 +345,20 @@ addtorepo()
 {
 # add all deb files to repository
 # parameter "remove" dumps all and creates new
+# parameter "delete" remove incoming directory if publishing is succesful
 # function: cycle trough distributions
+
 	local distributions=("jessie" "xenial" "stretch")
+	local errors=0
 
 	for release in "${distributions[@]}"; do
+
+		local forceoverwrite=""
 
 		# let's drop from publish if exits
 		if [[ -n $(aptly publish list -config=../config/aptly.conf -raw | awk '{print $(NF)}' | grep $release) ]]; then
 			aptly publish drop -config=../config/aptly.conf $release > /dev/null 2>&1
 		fi
-
-
-		if [[ $1 == remove ]]; then
-		# remove repository
-			aptly repo drop -config=../config/aptly.conf $release > /dev/null 2>&1
-			aptly db cleanup -config=../config/aptly.conf > /dev/null 2>&1
-		fi
-
-
-		if [[ $1 == replace ]]; then
-			local replace=true
-		else
-			local replace=false
-		fi
-
 
 		# create local repository if not exist
 		if [[ -z $(aptly repo list -config=../config/aptly.conf -raw | awk '{print $(NF)}' | grep $release) ]]; then
@@ -393,7 +383,13 @@ addtorepo()
 		# adding main
 		if find $POT -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
 			display_alert "Adding to repository $release" "main" "ext"
-			aptly repo add -force-replace=$replace -config=../config/aptly.conf $release $POT/*.deb
+			aptly repo add -config=../config/aptly.conf $release ${POT}*.deb
+			if [[ $? -ne 0 ]]; then
+				# try again with
+				display_alert "Adding by force to repository $release" "main" "ext"
+				aptly repo add -force-replace=true -config=../config/aptly.conf $release ${POT}*.deb
+				if [[ $? -eq 0 ]]; then forceoverwrite="-force-overwrite"; else errors=$((errors+1)); fi
+			fi
 		else
 			display_alert "Not adding $release" "main" "wrn"
 		fi
@@ -403,7 +399,13 @@ addtorepo()
 		# adding main distribution packages
 		if find ${POT}${release} -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
 			display_alert "Adding to repository $release" "root" "ext"
-			aptly repo add -force-replace=$replace -config=../config/aptly.conf $release ${POT}${release}/*.deb
+			aptly repo add -config=../config/aptly.conf $release ${POT}${release}/*.deb
+			if [[ $? -ne 0 ]]; then
+				# try again with
+				display_alert "Adding by force to repository $release" "root" "ext"
+				aptly repo add -force-replace=true -config=../config/aptly.conf $release ${POT}${release}/*.deb
+				if [[ $? -eq 0 ]]; then forceoverwrite="-force-overwrite"; else errors=$((errors+1));fi
+			fi
 		else
 			display_alert "Not adding $release" "root" "wrn"
 		fi
@@ -412,42 +414,79 @@ addtorepo()
 		if find ${POT}extra/jessie-utils -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
 			display_alert "Adding to repository $release" "utils" "ext"
 			aptly repo add -config=../config/aptly.conf "utils" ${POT}extra/jessie-utils/*.deb
-			COMPONENTS="${COMPONENTS} utils"
+			if [[ $? -ne 0 ]]; then
+				# try again with
+				display_alert "Adding by force to repository $release" "utils" "ext"
+				aptly repo add -force-replace=true -config=../config/aptly.conf "utils" ${POT}extra/jessie-utils/*.deb
+				if [[ $? -eq 0 ]]; then forceoverwrite="-force-overwrite"; else errors=$((errors+1));fi
+			fi
 		else
 			display_alert "Not adding $release" "utils" "wrn"
 		fi
+		COMPONENTS="${COMPONENTS} utils"
 
 		# adding release-specific utils
 		if find ${POT}extra/${release}-utils -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
 			display_alert "Adding to repository $release" "${release}-utils" "ext"
 			aptly repo add -config=../config/aptly.conf "${release}-utils" ${POT}extra/${release}-utils/*.deb
-			COMPONENTS="${COMPONENTS} ${release}-utils"
+			if [[ $? -ne 0 ]]; then
+				# try again with
+				display_alert "Adding by force to repository $release" "${release}-utils" "ext"
+				aptly repo add -force-replace=true -config=../config/aptly.conf "${release}-utils" ${POT}extra/${release}-utils/*.deb
+				if [[ $? -eq 0 ]]; then forceoverwrite="-force-overwrite"; else errors=$((errors+1));fi
+			fi
 		else
 			display_alert "Not adding $release" "${release}-utils" "wrn"
 		fi
+		COMPONENTS="${COMPONENTS} ${release}-utils"
 
 		# adding desktop
 		if find ${POT}extra/${release}-desktop -maxdepth 1 -type f -name "*.deb" 2>/dev/null | grep -q .; then
 			display_alert "Adding to repository $release" "desktop" "ext"
-			aptly repo add -force-replace=$replace -config=../config/aptly.conf "${release}-desktop" ${POT}extra/${release}-desktop/*.deb
-			COMPONENTS="${COMPONENTS} ${release}-desktop"
+			aptly repo add -config=../config/aptly.conf "${release}-desktop" ${POT}extra/${release}-desktop/*.deb
+			if [[ $? -ne 0 ]]; then
+				# try again with
+				display_alert "Adding by force to repository $release" "desktop" "ext"
+				aptly repo add -force-replace=true -config=../config/aptly.conf "${release}-desktop" ${POT}extra/${release}-desktop/*.deb
+				if [[ $? -eq 0 ]]; then forceoverwrite="-force-overwrite"; else errors=$((errors+1));fi
+			fi
 		else
 			display_alert "Not adding $release" "desktop" "wrn"
 		fi
+		COMPONENTS="${COMPONENTS} ${release}-desktop"
 
-		# publish
-		aptly publish -passphrase=$GPG_PASS -origin=Armbian -label=Armbian -config=../config/aptly.conf -component=${COMPONENTS// /,} \
-			--distribution=$release repo $release ${COMPONENTS//main/} 2>/dev/null
+		local mainnum=$(aptly repo show -with-packages -config=../config/aptly.conf $release | grep "Number of packages" | awk '{print $NF}')
+		local utilnum=$(aptly repo show -with-packages -config=../config/aptly.conf ${release}-desktop | grep "Number of packages" | awk '{print $NF}')
+		local desknum=$(aptly repo show -with-packages -config=../config/aptly.conf ${release}-utils | grep "Number of packages" | awk '{print $NF}')
 
-		if [[ $? -ne 0 ]]; then
-			display_alert "Publishing failed" "$release" "err"
-			exit 0
+		if [ $mainnum -gt 0 ] && [ $utilnum -gt 0 ] && [ $desknum -gt 0 ]; then
+			# publish
+			aptly publish $forceoverwrite -passphrase=$GPG_PASS -origin=Armbian -label=Armbian -config=../config/aptly.conf -component=${COMPONENTS// /,} \
+				--distribution=$release repo $release ${COMPONENTS//main/}
+			if [[ $? -ne 0 ]]; then
+				display_alert "Publishing failed" "$release" "err"
+				errors=$((errors+1))
+				exit 0
+			fi
+		else
+			errors=$((errors+1))
+			local err_txt=": All components must be present: main, utils and desktop for first build"
 		fi
+
 	done
+
+	# display what we have
 	display_alert "List of local repos" "local" "info"
 	(aptly repo list -config=../config/aptly.conf) | egrep packages
-	# serve
-	# aptly -config=../config/aptly.conf -listen=":8189" serve
+
+	# remove debs if no errors found
+	if [[ $errors -eq 0 && "$1" == "delete" ]]; then
+		display_alert "Purging incoming debs" "all" "ext"
+		find ${POT} -name "*.deb" -type f -delete
+	else
+		display_alert "There were some problems $err_txt" "leaving incoming directory intact" "err"
+	fi
+
 }
 
 # prepare_host
@@ -460,28 +499,16 @@ prepare_host()
 {
 	display_alert "Preparing" "host" "info"
 
-	if [[ $(dpkg --print-architecture) == arm* ]]; then
+	if [[ $(dpkg --print-architecture) != amd64 ]]; then
 		display_alert "Please read documentation to set up proper compilation environment"
 		display_alert "http://www.armbian.com/using-armbian-tools/"
-		exit_with_error "Running this tool on board itself is not supported"
-	fi
-
-	if [[ $(dpkg --print-architecture) == i386 ]]; then
-		display_alert "Please read documentation to set up proper compilation environment"
-		display_alert "http://www.armbian.com/using-armbian-tools/"
-		display_alert "Running this tool on non-x64 build host in not supported officially" "" "wrn"
-	fi
-
-	# dialog may be used to display progress
-	if [[ $(dpkg-query -W -f='${db:Status-Abbrev}\n' dialog 2>/dev/null) != *ii* ]]; then
-		display_alert "Installing package" "dialog"
-		apt-get install -qq -y --no-install-recommends dialog >/dev/null 2>&1
+		exit_with_error "Running this tool on non x86-x64 build host in not supported"
 	fi
 
 	# need lsb_release to decide what to install
 	if [[ $(dpkg-query -W -f='${db:Status-Abbrev}\n' lsb-release 2>/dev/null) != *ii* ]]; then
 		display_alert "Installing package" "lsb-release"
-		apt-get install -qq -y --no-install-recommends lsb-release >/dev/null 2>&1
+		apt -q update && apt install -q -y --no-install-recommends lsb-release
 	fi
 
 	# packages list for host
@@ -491,12 +518,19 @@ prepare_host()
 	parted pkg-config libncurses5-dev whiptail debian-keyring debian-archive-keyring f2fs-tools libfile-fcntllock-perl rsync libssl-dev \
 	nfs-kernel-server btrfs-tools ncurses-term p7zip-full kmod dosfstools libc6-dev-armhf-cross \
 	curl patchutils python liblz4-tool libpython2.7-dev linux-base swig libpython-dev \
-	locales ncurses-base pixz"
+	locales ncurses-base pixz dialog"
 
 	local codename=$(lsb_release -sc)
 	display_alert "Build host OS release" "${codename:-(unknown)}" "info"
 	if [[ -z $codename || "trusty xenial" != *"$codename"* ]]; then
 		exit_with_error "It seems you ignore documentation and run an unsupported build system: ${codename:-(unknown)}"
+	fi
+
+	if [[ $codename == trusty ]]; then
+		display_alert "Note: Ubuntu Trusty environment support will be removed before the end of 2017" "" "wrn"
+		display_alert "Please upgrade your compilation environment to Ubuntu Xenial" "" "wrn"
+		display_alert "Press <Enter> to continue"
+		read
 	fi
 
 	if [[ $codename == xenial ]]; then
@@ -536,8 +570,6 @@ prepare_host()
 		display_alert "Updating from external repository" "aptly" "info"
 		wget -qO - https://www.aptly.info/pubkey.txt | apt-key add - >/dev/null 2>&1
 		echo "deb http://repo.aptly.info/ squeeze main" > /etc/apt/sources.list.d/aptly.list
-		apt-get -qq update
-		apt-get install aptly
 	fi
 
 	# sync clock
@@ -547,16 +579,14 @@ prepare_host()
 	fi
 
 	if [[ ${#deps[@]} -gt 0 ]]; then
-		eval '( apt-get -q update; apt-get -q -y --no-install-recommends install "${deps[@]}" )' \
-			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/output.log'} \
-			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Installing ${#deps[@]} host dependencies..." $TTY_Y $TTY_X'} \
-			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
-		# this is needed in case new compilers were installed
+		display_alert "Installing build dependencies"
+		apt -q update
+		apt -q -y --no-install-recommends install "${deps[@]}" | tee -a $DEST/debug/hostdeps.log
 		update-ccache-symlinks
 	fi
 
 	if [[ $codename == xenial && $(dpkg-query -W -f='${db:Status-Abbrev}\n' 'zlib1g:i386' 2>/dev/null) != *ii* ]]; then
-		apt-get install -qq -y --no-install-recommends zlib1g:i386 >/dev/null 2>&1
+		apt install -qq -y --no-install-recommends zlib1g:i386 >/dev/null 2>&1
 	fi
 
 	# enable arm binary format so that the cross-architecture chroot environment will work
@@ -587,15 +617,13 @@ prepare_host()
 		"https://dl.armbian.com/_toolchains/gcc-linaro-4.9.4-2017.01-x86_64_aarch64-linux-gnu.tar.xz"
 		"https://dl.armbian.com/_toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabi.tar.xz"
 		"https://dl.armbian.com/_toolchains/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabi.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-6.4.1-2017.08-x86_64_arm-linux-gnueabihf.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-6.4.1-2017.08-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-7.1.1-2017.08-x86_64_aarch64-linux-gnu.tar.xz"
-		"https://dl.armbian.com/_toolchains/gcc-linaro-7.1.1-2017.08-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-5.5.0-2017.10-x86_64_arm-linux-gnueabi.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-5.5.0-2017.10-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-6.4.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-6.4.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-7.2.1-2017.11-x86_64_aarch64-linux-gnu.tar.xz"
+		"https://dl.armbian.com/_toolchains/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf.tar.xz"
 		)
 
 	for toolchain in ${toolchains[@]}; do
@@ -671,7 +699,7 @@ download_toolchain()
 	fi
 	if [[ $verified == true ]]; then
 		display_alert "Extracting"
-		tar --overwrite -xf $filename && touch $SRC/cache/toolchains/$dirname/.download-complete
+		tar --no-same-owner --overwrite -xf $filename && touch $SRC/cache/toolchains/$dirname/.download-complete
 		display_alert "Download complete" "" "info"
 	else
 		display_alert "Verification failed" "" "wrn"

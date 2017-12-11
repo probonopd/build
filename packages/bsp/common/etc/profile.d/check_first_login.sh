@@ -40,7 +40,7 @@ add_user()
 	[ -z "$RealUserName" ] && return
 	echo "Trying to add user $RealUserName"
 	adduser $RealUserName || return
-	for additionalgroup in sudo netdev audio video dialout plugdev bluetooth systemd-journal; do
+	for additionalgroup in sudo netdev audio video dialout plugdev bluetooth systemd-journal ssh; do
 		usermod -aG ${additionalgroup} ${RealUserName} 2>/dev/null
 	done
 	# fix for gksu in Xenial
@@ -58,9 +58,9 @@ add_user()
 	# set up profile sync daemon on desktop systems
 	which psd >/dev/null 2>&1
 	if [ $? -eq 0 ]; then
-		echo -e "${RealUserName} ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper" >>/etc/sudoers
-		export -f add_profile_sync_settings
-		su ${RealUserName} -c "bash -c add_profile_sync_settings" 2>/dev/null
+		echo -e "${RealUserName} ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper" >> /etc/sudoers
+		touch /home/${RealUserName}/.activate_psd
+		chown $RealUserName:$RealUserName /home/${RealUserName}/.activate_psd
 	fi
 }
 
@@ -103,7 +103,7 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 		fi
 	fi
 	# check whether desktop environment has to be considered
-#	if [ -f "/etc/init.d/nodm" ] && [ -n "$RealName" ] ; then
+#	if [ "$DESKTOPDETECT" = nodm ] && [ -n "$RealName" ] ; then
 #		# enable splash
 #		# [[ -f /etc/systemd/system/desktop-splash.service ]] && systemctl --no-reload enable desktop-splash.service >/dev/null 2>&1 && service desktop-splash restart
 #		sed -i "s/NODM_USER=\(.*\)/NODM_USER=${RealUserName}/" /etc/default/nodm
@@ -119,8 +119,8 @@ if [ -f /root/.not_logged_in_yet ] && [ -n "$BASH_VERSION" ] && [ "$-" != "${-#*
 #			sleep 1
 #			service nodm start
 #		fi
-#	if [ -d "/etc/lightdm" ] && [ -n "$RealName" ] ; then
-#		systemctl enable lightdm.service 2>/dev/null
+#	elif [ "$DESKTOPDETECT" = lightdm ] && [ -n "$RealName" ] ; then
+#			ln -sf /lib/systemd/system/lightdm.service /etc/systemd/system/display-manager.service
 #		if [[ -f /var/run/resize2fs-reboot ]]; then
 #			# Let the user reboot now otherwise start desktop environment
 #			printf "\n\n\e[0;91mWarning: a reboot is needed to finish resizing the filesystem \x1B[0m \n"

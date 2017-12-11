@@ -3,7 +3,7 @@
 #bpp=32
 bpp=24
 
-#hdmimode=1080i
+#hdmimode=1080p
 hdmimode=720p
 
 echo "$hdmimode" > /sys/class/display/mode

@@ -92,7 +92,9 @@ install_desktop ()
 	sed -e 's/exit 0//g' -i $SDCARD/etc/rc.local
 	echo "su -c 'hciattach /dev/ttyS1 any'" >> $SDCARD/etc/rc.local
 	echo "exit 0" >> $SDCARD/etc/rc.local
-	cp $SRC/cache/SRC/Test.mp4 $SDCARD/etc/skel/Desktop
-	cp $SRC/cache/SRC/Test1.mp4 $SDCARD/etc/skel/Desktop
+	if [[ $BUILD_DESKTOP_DE != icewm  ]]; then
+	    cp $SRC/cache/SRC/Test.mp4 $SDCARD/etc/skel/Desktop
+	    cp $SRC/cache/SRC/Test1.mp4 $SDCARD/etc/skel/Desktop
+	fi
 
 }

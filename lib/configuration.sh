@@ -111,7 +111,7 @@ PACKAGE_LIST="bc bridge-utils build-essential cpufrequtils device-tree-compiler 
 	iw fake-hwclock wpasupplicant psmisc ntp parted rsync sudo curl linux-base dialog crda \
 	wireless-regdb ncurses-term python3-apt sysfsutils toilet u-boot-tools unattended-upgrades \
 	usbutils wireless-tools console-setup unicode-data openssh-server initramfs-tools \
-	ca-certificates resolvconf expect rcconf iptables mc abootimg"
+	ca-certificates resolvconf expect rcconf iptables mc abootimg man-db wget"
 
 # development related packages. remove when they are not needed for building packages in chroot
 PACKAGE_LIST="$PACKAGE_LIST automake libwrap0-dev libssl-dev libnl-3-dev libnl-genl-3-dev"
@@ -122,11 +122,17 @@ PACKAGE_LIST_ADDITIONAL="alsa-utils btrfs-tools dosfstools hddtemp iotop iozone3
 	hdparm rfkill vlan sysstat bash-completion hostapd git ethtool network-manager unzip ifenslave command-not-found lirc \
 	libpam-systemd iperf3 software-properties-common libnss-myhostname f2fs-tools avahi-autoipd iputils-arping"
 
-PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-fuse xfonts-base xinit x11-xserver-utils lxtask xterm mirage thunar-volman galculator hexchat \
-	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl gksu bluetooth \
+PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-fuse xfonts-base xinit x11-xserver-utils xterm thunar-volman \
+	gksu bluetooth \
 	network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
-	paman pavumeter pulseaudio-module-gconf bluez bluez-tools pulseaudio-module-bluetooth blueman libpam-gnome-keyring libgl1-mesa-dri mpv gparted synaptic \
-	libreoffice-writer libreoffice-style-tango libreoffice-gtk policykit-1 fbi profile-sync-daemon cups-pk-helper cups mesa-utils"
+	paman pavumeter pulseaudio-module-gconf bluez bluez-tools pulseaudio-module-bluetooth blueman libgl1-mesa-dri gparted synaptic \
+	policykit-1 profile-sync-daemon mesa-utils"
+
+PACKAGE_LIST_OFFICE="lxtask mirage galculator hexchat mpv \
+	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl \
+	network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
+	libpam-gnome-keyring thunderbird system-config-printer-common numix-gtk-theme paprefs tango-icon-theme \
+	libreoffice-writer libreoffice-style-tango libreoffice-gtk fbi cups-pk-helper cups"
 
 #case $DISPLAY_MANAGER in
 #	nodm)
@@ -144,10 +150,15 @@ PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-f
 
 # add XFCE or MATE
 case $BUILD_DESKTOP_DE in
+	icewm)
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP icewm"
+	;;
 	xfce)
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP $PACKAGE_LIST_OFFICE"
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP xfce4 xfce4-screenshooter xfce4-notifyd xfce4-terminal"
 	;;
 	mate)
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP $PACKAGE_LIST_OFFICE"
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets ubuntu-mate-lightdm-theme mozo"
 	;;
 esac
@@ -159,13 +170,15 @@ case $RELEASE in
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma iceweasel policykit-1-gnome eject system-config-printer"
 	;;
 	xenial)
-	PACKAGE_LIST_RELEASE="man-db wget nano linux-firmware zram-config"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser gnome-icon-theme-full tango-icon-theme language-selector-gnome paprefs numix-gtk-theme system-config-printer-common system-config-printer-gnome"
+	PACKAGE_LIST_RELEASE="nano linux-firmware zram-config"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP chromium-browser"
+	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP gnome-icon-theme-full language-selector-gnome system-config-printer-gnome"
 	[[ $ARCH == armhf ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-utils ubuntu-mate-welcome mate-settings-daemon"
 	;;
 	stretch)
-	PACKAGE_LIST_RELEASE="man-db less kbd net-tools netcat-openbsd"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium tango-icon-theme paprefs numix-gtk-theme dbus-x11 system-config-printer-common system-config-printer"
+	PACKAGE_LIST_RELEASE="less kbd net-tools netcat-openbsd"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP chromium dbus-x11"
+	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP system-config-printer"
 	;;
 esac
 

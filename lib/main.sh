@@ -231,6 +231,7 @@ if [[ $KERNEL_ONLY != yes && $BUILD_DESKTOP = yes ]]; then
 	options=()
 	options+=("xfce" "Image with desktop XFCE")
 	options+=("mate" "Image with desktop MATE")
+	options+=("icewm" "Image with desktop IceWM")
 	BUILD_DESKTOP_DE=$(dialog --stdout --title "Choose DE type" --backtitle "$backtitle" --no-tags --menu "Select the DE for target image" \
 		$TTY_Y $TTY_X $(($TTY_Y - 8)) "${options[@]}")
 	unset options

@@ -76,6 +76,10 @@ fi
 
 [[ $RELEASE == stretch && $CAN_BUILD_STRETCH != yes ]] && exit_with_error "Building Debian Stretch images with selected kernel is not supported"
 
+[[ -n $ATFSOURCE && -z $ATF_USE_GCC ]] && exit_with_error "Error in configuration: ATF_USE_GCC is unset"
+[[ -z $UBOOT_USE_GCC ]] && exit_with_error "Error in configuration: UBOOT_USE_GCC is unset"
+[[ -z $KERNEL_USE_GCC ]] && exit_with_error "Error in configuration: KERNEL_USE_GCC is unset"
+
 case $ARCH in
 	arm64)
 	[[ -z $KERNEL_COMPILER ]] && KERNEL_COMPILER="aarch64-linux-gnu-"
@@ -144,17 +148,17 @@ esac
 # Release specific packages
 case $RELEASE in
 	jessie)
-	PACKAGE_LIST_RELEASE="less kbd"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma iceweasel policykit-1-gnome eject system-config-printer"
+	PACKAGE_LIST_RELEASE="less kbd gnupg2 dirmngr"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma iceweasel thunderbird policykit-1-gnome eject system-config-printer"
 	;;
 	xenial)
 	PACKAGE_LIST_RELEASE="man-db wget nano linux-firmware zram-config"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser gnome-icon-theme-full tango-icon-theme language-selector-gnome paprefs numix-gtk-theme system-config-printer-common system-config-printer-gnome"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser language-selector-gnome paprefs numix-gtk-theme system-config-printer-common system-config-printer-gnome"
 	[[ $ARCH == armhf ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-utils ubuntu-mate-welcome mate-settings-daemon"
 	;;
 	stretch)
-	PACKAGE_LIST_RELEASE="man-db less kbd net-tools netcat-openbsd"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium tango-icon-theme paprefs numix-gtk-theme dbus-x11 system-config-printer-common system-config-printer"
+	PACKAGE_LIST_RELEASE="man-db less kbd net-tools netcat-openbsd gnupg2 dirmngr"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium paprefs numix-gtk-theme dbus-x11 system-config-printer-common system-config-printer"
 	;;
 esac
 
@@ -178,10 +182,10 @@ fi
 
 # Build final package list after possible override
 PACKAGE_LIST="$PACKAGE_LIST $PACKAGE_LIST_RELEASE $PACKAGE_LIST_ADDITIONAL"
-if [[ $ARCH == arm64 ]]; then
-	PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/iceweasel/iceweasel:armhf}"
-	PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/thunderbird/thunderbird:armhf}"
-fi
+#if [[ $ARCH == arm64 ]]; then
+	#PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/iceweasel/iceweasel:armhf}"
+	#PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/thunderbird/thunderbird:armhf}"
+#fi
 [[ $BUILD_DESKTOP == yes ]] && PACKAGE_LIST="$PACKAGE_LIST $PACKAGE_LIST_DESKTOP"
 
 # remove any packages defined in PACKAGE_LIST_RM in lib.config
@@ -194,6 +198,9 @@ cat <<-EOF >> $DEST/debug/output.log
 ## BUILD SCRIPT ENVIRONMENT
 
 Version: $(cd $SRC; git rev-parse @)
+Host OS: $(lsb_release -sc)
+Host arch: $(dpkg --print-architecture)
+Dirty: $(git diff-index --quiet HEAD -- && echo No || echo Yes)
 
 ## BUILD CONFIGURATION
 

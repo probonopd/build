@@ -3,8 +3,8 @@
 #bpp=32
 bpp=24
 
-mode=1080p
-#mode=720p
+#mode=1080p
+mode=720p
 
 echo "$mode" > /sys/class/display/mode
 

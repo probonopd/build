@@ -100,7 +100,21 @@ install_common()
 	ff02::2     ip6-allrouters
 	EOF
 
-	# add hdmi init
+# 20180110	add hdmi init
+	if [[ $BOARD_NAME == "S805" ]]; then
+		display_alert "Hook initramfs" "$BOARD_NAME" "info"
+		install -m 755 $SRC/scripts/amlogic/805_hdmi $SDCARD/usr/share/initramfs-tools/hooks/hdmi
+		install -m 755 $SRC/scripts/amlogic/805_init $SDCARD/usr/share/initramfs-tools/init
+		install -m 755 $SRC/scripts/amlogic/$SCR_HDMI_INIT $SDCARD/bin/hdmi_init.sh
+	fi
+
+	if [[ $BOARD_NAME == "S812" ]]; then
+		display_alert "Hook initramfs" "$BOARD_NAME" "info"
+		install -m 755 $SRC/scripts/amlogic/812_hdmi $SDCARD/usr/share/initramfs-tools/hooks/hdmi
+		install -m 755 $SRC/scripts/amlogic/812_init $SDCARD/usr/share/initramfs-tools/init
+		install -m 755 $SRC/scripts/amlogic/$SCR_HDMI_INIT $SDCARD/bin/hdmi_init.sh
+	fi
+
 	if [[ $BOARD_NAME == "S9xxx" ]]; then
 		display_alert "Hook initramfs" "$BOARD_NAME" "info"
 		install -m 755 $SRC/scripts/amlogic/905_hdmi $SDCARD/usr/share/initramfs-tools/hooks/hdmi

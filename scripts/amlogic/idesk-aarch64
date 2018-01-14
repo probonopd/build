@@ -1,0 +1,42 @@
+#!/bin/sh
+
+build_idesk-n()
+{
+	display_alert "Build idesk-n" "@host" "info"
+
+	local plugin_repo="https://github.com/150balbes/pkg-aml"
+	local plugin_dir="idesk-n"
+	[[ -d "$SOURCES/$plugin_dir" && -n "$SOURCES$plugin_dir" ]] && rm -rf $SOURCES/$plugin_dir
+	fetch_from_repo "$plugin_repo" "$plugin_dir" "branch:idesk-aarch64"
+	rm -R $SOURCES/$plugin_dir/.git
+	cd $SOURCES/$plugin_dir
+
+	# set up control file
+	mkdir -p DEBIAN
+	cat <<-END > DEBIAN/control
+	Package: idesk-n
+	Version: $REVISION
+	Architecture: $ARCH
+	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
+	Provides: idesk-n
+	Depends: xterm, Xdialog, menu-icons-default
+	Conflicts: idesk
+	Section: utils
+	Priority: optional
+	Description: Icewm GUI
+	END
+
+	cd $SOURCES
+	# pack
+	mv idesk-n idesk-n_${REVISION}_${ARCH}
+	dpkg -b idesk-n_${REVISION}_${ARCH} >> $DEST/debug/install.log 2>&1
+	mv idesk-n_${REVISION}_${ARCH} idesk-n
+	mv idesk-n_${REVISION}_${ARCH}.deb $DEST/debs/ || display_alert "Failed moving idesk-n package" "" "wrn"
+}
+
+[[ ! -f $DEST/debs/idesk-n_${REVISION}_${ARCH}.deb ]] && build_idesk-n
+
+# install
+display_alert "Installing idesk-n" "$REVISION" "info"
+install_deb_chroot "$DEST/debs/idesk-n_${REVISION}_${ARCH}.deb"  >> $DEST/debug/install.log
+#chroot $SDCARD /bin/bash -c "systemctl --no-reload enable amlogic-remotecfg.service >/dev/null 2>&1"

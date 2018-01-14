@@ -26,6 +26,7 @@ install_desktop ()
 	# install default desktop settings
 	cp -R $SRC/packages/blobs/desktop/skel/. $SDCARD/etc/skel
 	cp -R $SRC/packages/blobs/desktop/skel/. $SDCARD/root
+	mkdir -p $SDCARD/etc/skel/Desktop/
 
 	# install dedicated startup icons
 	cp $SRC/packages/blobs/desktop/icons/${DISTRIBUTION,,}.png $SDCARD/usr/share/pixmaps

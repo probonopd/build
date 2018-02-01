@@ -159,7 +159,7 @@ case $BUILD_DESKTOP_DE in
 	;;
 	mate)
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP $PACKAGE_LIST_OFFICE"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets ubuntu-mate-lightdm-theme mozo"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets mozo"
 	;;
 esac
 
@@ -172,7 +172,7 @@ case $RELEASE in
 	xenial)
 	PACKAGE_LIST_RELEASE="nano linux-firmware zram-config"
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP chromium-browser"
-	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP gnome-icon-theme-full language-selector-gnome system-config-printer-gnome"
+	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP gnome-icon-theme-full language-selector-gnome system-config-printer-gnome ubuntu-mate-lightdm-theme"
 	[[ $ARCH == armhf ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-utils ubuntu-mate-welcome mate-settings-daemon"
 	;;
 	stretch)

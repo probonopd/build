@@ -11,8 +11,8 @@ install_modules()
 
 	make -s ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" clean >> $DEST/debug/compilation.log 2>&1
 	KERNEL_SRC=$SOURCES/$LINUXSOURCEDIR/ CONFIG_CLD_HL_SDIO_CORE=y make -s -j4 ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" >> $DEST/debug/compilation.log 2>&1
-	cp qca9377.ko $SDCARD/lib/modules/$VER/kernel/drivers/amlogic/
-	depmod -b $SDCARD/ $VER
+	cp qca9377.ko $SDCARD/lib/modules/$LOCAL_KERNEL_VERSION/kernel/drivers/amlogic/wifi/
+	depmod -b $SDCARD/ $LOCAL_KERNEL_VERSION
 #	make -s clean >/dev/null
 
 }

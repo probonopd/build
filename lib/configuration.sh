@@ -10,7 +10,7 @@
 # common options
 # daily beta build contains date in subrevision
 if [[ $BETA == yes && -z $SUBREVISION ]]; then SUBREVISION="."$(date --date="tomorrow" +"%y%m%d"); fi
-REVISION="5.37$SUBREVISION" # all boards have same revision
+REVISION="5.41$SUBREVISION" # all boards have same revision
 ROOTPWD="1234" # Must be changed @first login
 MAINTAINER="Igor Pecovnik" # deb signature
 MAINTAINERMAIL="igor.pecovnik@****l.com" # deb signature
@@ -77,6 +77,10 @@ fi
 
 [[ $RELEASE == stretch && $CAN_BUILD_STRETCH != yes ]] && exit_with_error "Building Debian Stretch images with selected kernel is not supported"
 
+[[ -n $ATFSOURCE && -z $ATF_USE_GCC ]] && exit_with_error "Error in configuration: ATF_USE_GCC is unset"
+[[ -z $UBOOT_USE_GCC ]] && exit_with_error "Error in configuration: UBOOT_USE_GCC is unset"
+[[ -z $KERNEL_USE_GCC ]] && exit_with_error "Error in configuration: KERNEL_USE_GCC is unset"
+
 case $ARCH in
 	arm64)
 	[[ -z $KERNEL_COMPILER ]] && KERNEL_COMPILER="aarch64-linux-gnu-"
@@ -111,7 +115,7 @@ PACKAGE_LIST="bc bridge-utils build-essential cpufrequtils device-tree-compiler 
 	iw fake-hwclock wpasupplicant psmisc ntp parted rsync sudo curl linux-base dialog crda \
 	wireless-regdb ncurses-term python3-apt sysfsutils toilet u-boot-tools unattended-upgrades \
 	usbutils wireless-tools console-setup unicode-data openssh-server initramfs-tools \
-	ca-certificates resolvconf expect rcconf iptables mc abootimg man-db wget"
+	ca-certificates resolvconf expect rcconf iptables mc abootimg wget"
 
 # development related packages. remove when they are not needed for building packages in chroot
 PACKAGE_LIST="$PACKAGE_LIST automake libwrap0-dev libssl-dev libnl-3-dev libnl-genl-3-dev"
@@ -166,19 +170,19 @@ esac
 # Release specific packages
 case $RELEASE in
 	jessie)
-	PACKAGE_LIST_RELEASE="less kbd"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma iceweasel policykit-1-gnome eject system-config-printer"
+	PACKAGE_LIST_RELEASE="less kbd gnupg2 dirmngr"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mozo pluma iceweasel thunderbird policykit-1-gnome eject system-config-printer"
 	;;
 	xenial)
-	PACKAGE_LIST_RELEASE="nano linux-firmware zram-config"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP chromium-browser"
-	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP gnome-icon-theme-full language-selector-gnome system-config-printer-gnome ubuntu-mate-lightdm-theme"
+	PACKAGE_LIST_RELEASE="man-db nano linux-firmware zram-config"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser"
+	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP language-selector-gnome paprefs numix-gtk-theme system-config-printer-common system-config-printer-gnome ubuntu-mate-lightdm-theme"
 	[[ $ARCH == armhf ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-utils ubuntu-mate-welcome mate-settings-daemon"
 	;;
 	stretch)
-	PACKAGE_LIST_RELEASE="less kbd net-tools netcat-openbsd"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP chromium dbus-x11"
-	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP system-config-printer"
+	PACKAGE_LIST_RELEASE="man-db less kbd net-tools netcat-openbsd gnupg2 dirmngr"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium dbus-x11"
+	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP  paprefs numix-gtk-theme system-config-printer-common system-config-printer"
 	;;
 esac
 
@@ -202,10 +206,10 @@ fi
 
 # Build final package list after possible override
 PACKAGE_LIST="$PACKAGE_LIST $PACKAGE_LIST_RELEASE $PACKAGE_LIST_ADDITIONAL"
-if [[ $ARCH == arm64 ]]; then
-	PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/iceweasel/iceweasel:armhf}"
-	PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/thunderbird/thunderbird:armhf}"
-fi
+#if [[ $ARCH == arm64 ]]; then
+	#PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/iceweasel/iceweasel:armhf}"
+	#PACKAGE_LIST_DESKTOP="${PACKAGE_LIST_DESKTOP/thunderbird/thunderbird:armhf}"
+#fi
 [[ $BUILD_DESKTOP == yes ]] && PACKAGE_LIST="$PACKAGE_LIST $PACKAGE_LIST_DESKTOP"
 
 # remove any packages defined in PACKAGE_LIST_RM in lib.config
@@ -215,9 +219,26 @@ fi
 
 # debug
 cat <<-EOF >> $DEST/debug/output.log
+
 ## BUILD SCRIPT ENVIRONMENT
 
-Version: $(cd $SRC; git rev-parse @)
+Repository: $(git remote get-url $(git remote 2>/dev/null) 2>/dev/null)
+Version: $(git describe --match=d_e_a_d_b_e_e_f --always --dirty 2>/dev/null)
+
+Host OS: $(lsb_release -sc)
+Host arch: $(dpkg --print-architecture)
+Host system: $(uname -a)
+Virtualization type: $(systemd-detect-virt)
+
+## Build script directories
+Build directory is located on:
+$(findmnt -o TARGET,SOURCE,FSTYPE,AVAIL -T $SRC)
+
+Build directory permissions:
+$(getfacl -p $SRC)
+
+Temp directory permissions:
+$(getfacl -p $SRC/.tmp)
 
 ## BUILD CONFIGURATION
 

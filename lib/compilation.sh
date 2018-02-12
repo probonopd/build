@@ -36,24 +36,21 @@ compile_atf()
 
 	display_alert "Compiling ATF" "" "info"
 
-	local toolchain=""
-	if [[ -n $ATF_USE_GCC ]]; then
-		toolchain=$(find_toolchain "$ATF_COMPILER" "$ATF_USE_GCC")
-		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${ATF_COMPILER}gcc $ATF_USE_GCC"
-	fi
+	local toolchain=$(find_toolchain "$ATF_COMPILER" "$ATF_USE_GCC")
+	[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${ATF_COMPILER}gcc $ATF_USE_GCC"
 
-	display_alert "Compiler version" "${ATF_COMPILER}gcc $(eval ${toolchain:+env PATH=$toolchain:$PATH} ${ATF_COMPILER}gcc -dumpversion)" "info"
+	display_alert "Compiler version" "${ATF_COMPILER}gcc $(eval env PATH=$toolchain:$PATH ${ATF_COMPILER}gcc -dumpversion)" "info"
 
 	local target_make=$(cut -d';' -f1 <<< $ATF_TARGET_MAP)
 	local target_patchdir=$(cut -d';' -f2 <<< $ATF_TARGET_MAP)
 	local target_files=$(cut -d';' -f3 <<< $ATF_TARGET_MAP)
 
-	[[ $FORCE_CHECKOUT == yes ]] && advanced_patch "atf" "atf-${LINUXFAMILY}" "$BOARD" "$target_patchdir" "$BRANCH" "${LINUXFAMILY}-${BOARD}-${BRANCH}"
+	advanced_patch "atf" "atf-${LINUXFAMILY}" "$BOARD" "$target_patchdir" "$BRANCH" "${LINUXFAMILY}-${BOARD}-${BRANCH}"
 
 	# create patch for manual source changes
 	[[ $CREATE_PATCHES == yes ]] && userpatch_create "atf"
 
-	eval CCACHE_BASEDIR="$(pwd)" ${toolchain:+env PATH=$toolchain:$PATH} \
+	eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
 		'make $target_make $CTHREADS CROSS_COMPILE="$CCACHE $ATF_COMPILER"' 2>&1 \
 		${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
 		${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Compiling ATF..." $TTY_Y $TTY_X'} \
@@ -102,13 +99,10 @@ compile_uboot()
 
 	display_alert "Compiling u-boot" "$version" "info"
 
-	local toolchain=""
-	if [[ -n $UBOOT_USE_GCC ]]; then
-		toolchain=$(find_toolchain "$UBOOT_COMPILER" "$UBOOT_USE_GCC")
-		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${UBOOT_COMPILER}gcc $UBOOT_USE_GCC"
-	fi
+	local toolchain=$(find_toolchain "$UBOOT_COMPILER" "$UBOOT_USE_GCC")
+	[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${UBOOT_COMPILER}gcc $UBOOT_USE_GCC"
 
-	display_alert "Compiler version" "${UBOOT_COMPILER}gcc $(eval ${toolchain:+env PATH=$toolchain:$PATH} ${UBOOT_COMPILER}gcc -dumpversion)" "info"
+	display_alert "Compiler version" "${UBOOT_COMPILER}gcc $(eval env PATH=$toolchain:$PATH ${UBOOT_COMPILER}gcc -dumpversion)" "info"
 
 	# create directory structure for the .deb package
 	local uboot_name=${CHOSEN_UBOOT}_${REVISION}_${ARCH}
@@ -129,7 +123,7 @@ compile_uboot()
 			(cd $SRC/cache/sources/$BOOTSOURCEDIR; make clean > /dev/null 2>&1)
 		fi
 
-		[[ $FORCE_CHECKOUT == yes ]] && advanced_patch "u-boot" "$BOOTPATCHDIR" "$BOARD" "$target_patchdir" "$BRANCH" "${LINUXFAMILY}-${BOARD}-${BRANCH}"
+		advanced_patch "u-boot" "$BOOTPATCHDIR" "$BOARD" "$target_patchdir" "$BRANCH" "${LINUXFAMILY}-${BOARD}-${BRANCH}"
 
 		# create patch for manual source changes
 		[[ $CREATE_PATCHES == yes ]] && userpatch_create "u-boot"
@@ -139,7 +133,7 @@ compile_uboot()
 			cp -Rv $atftempdir/*.bin .
 		fi
 
-		eval CCACHE_BASEDIR="$(pwd)" ${toolchain:+env PATH=$toolchain:$PATH} \
+		eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
 			'make $CTHREADS $BOOTCONFIG CROSS_COMPILE="$CCACHE $UBOOT_COMPILER"' 2>&1 \
 			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
@@ -153,7 +147,7 @@ compile_uboot()
 		[[ $BOOTDELAY == 0 ]] && echo -e "CONFIG_ZERO_BOOTDELAY_CHECK=y" >> .config
 		[[ -n $BOOTDELAY ]] && sed -i "s/^CONFIG_BOOTDELAY=.*/CONFIG_BOOTDELAY=${BOOTDELAY}/" .config || [[ -f .config ]] && echo "CONFIG_BOOTDELAY=${BOOTDELAY}" >> .config
 
-		eval CCACHE_BASEDIR="$(pwd)" ${toolchain:+env PATH=$toolchain:$PATH} \
+		eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
 			'make $target_make $CTHREADS CROSS_COMPILE="$CCACHE $UBOOT_COMPILER"' 2>&1 \
 			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
 			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Compiling u-boot..." $TTY_Y $TTY_X'} \
@@ -252,10 +246,10 @@ compile_kernel()
 	# TODO: Check if still required
 	if [[ $(patch --dry-run -t -p1 < $SRC/patch/kernel/compiler.patch | grep Reversed) != "" ]]; then
 		display_alert "Patching kernel for compiler support"
-		[[ $FORCE_CHECKOUT == yes ]] && patch --batch --silent -t -p1 < $SRC/patch/kernel/compiler.patch >> $DEST/debug/output.log 2>&1
+		patch --batch --silent -t -p1 < $SRC/patch/kernel/compiler.patch >> $DEST/debug/output.log 2>&1
 	fi
 
-	[[ $FORCE_CHECKOUT == yes ]] && advanced_patch "kernel" "$KERNELPATCHDIR" "$BOARD" "" "$BRANCH" "$LINUXFAMILY-$BRANCH"
+	advanced_patch "kernel" "$KERNELPATCHDIR" "$BOARD" "" "$BRANCH" "$LINUXFAMILY-$BRANCH"
 
 	if ! grep -qoE '^-rc[[:digit:]]+' <(grep "^EXTRAVERSION" Makefile | head -1 | awk '{print $(NF)}'); then
 		sed -i 's/EXTRAVERSION = .*/EXTRAVERSION = /' Makefile
@@ -283,13 +277,10 @@ compile_kernel()
 
 	display_alert "Compiling $BRANCH kernel" "$version" "info"
 
-	local toolchain=""
-	if [[ -n $KERNEL_USE_GCC ]]; then
-		toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
-		[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
-	fi
+	local toolchain=$(find_toolchain "$KERNEL_COMPILER" "$KERNEL_USE_GCC")
+	[[ -z $toolchain ]] && exit_with_error "Could not find required toolchain" "${KERNEL_COMPILER}gcc $KERNEL_USE_GCC"
 
-	display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval ${toolchain:+env PATH=$toolchain:$PATH} ${KERNEL_COMPILER}gcc -dumpversion)" "info"
+	display_alert "Compiler version" "${KERNEL_COMPILER}gcc $(eval env PATH=$toolchain:$PATH ${KERNEL_COMPILER}gcc -dumpversion)" "info"
 
 	# copy kernel config
 	if [[ $KERNEL_KEEP_CONFIG == yes && -f $DEST/$LINUXCONFIG.config ]]; then
@@ -310,30 +301,36 @@ compile_kernel()
 
 ####	export LOCALVERSION="-$LINUXFAMILY"
 	export LOCAL_VERSION="-$LINUXFAMILY"
+	export LOCAL_KERNEL_VERSION="$version"
 
 	if [[ $KERNEL_CONFIGURE != yes ]]; then
-#		if [[ $BRANCH == default ]]; then
-			make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" silentoldconfig
-#		else
-#			# TODO: check if required
-#			make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" olddefconfig
-#		fi
+		if [[ $BRANCH == default ]]; then
+			eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
+				'make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" silentoldconfig'
+		else
+			# TODO: check if required
+			eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
+				'make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" olddefconfig'
+		fi
 	else
-		make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" oldconfig
-		make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" ${KERNEL_MENUCONFIG:-menuconfig}
+		eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
+			'make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" oldconfig'
+		eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
+			'make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" ${KERNEL_MENUCONFIG:-menuconfig}'
 		# store kernel config in easily reachable place
 		display_alert "Exporting new kernel config" "$DEST/$LINUXCONFIG.config" "info"
 		cp .config $DEST/config/$LINUXCONFIG.config
 		# export defconfig too if requested
 		if [[ $KERNEL_EXPORT_DEFCONFIG == yes ]]; then
-			make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" savedefconfig > /dev/null 2>&1
+			eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
+				'make ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" savedefconfig'
 			[[ -f defconfig ]] && cp defconfig $DEST/config/$LINUXCONFIG.defconfig
 		fi
 	fi
 
 	xz < .config > $sources_pkg_dir/usr/src/${LINUXCONFIG}_${version}_${REVISION}_config.xz
 
-	eval CCACHE_BASEDIR="$(pwd)" ${toolchain:+env PATH=$toolchain:$PATH} \
+	eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
 		'make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" $SRC_LOADADDR LOCALVERSION="-$LINUXFAMILY" \
 		$KERNEL_IMAGE_TYPE modules dtbs 2>&1' \
 		${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
@@ -354,7 +351,7 @@ compile_kernel()
 	display_alert "Creating packages"
 
 	# produce deb packages: image, headers, firmware, dtb
-	eval CCACHE_BASEDIR="$(pwd)" ${toolchain:+env PATH=$toolchain:$PATH} \
+	eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
 		'make -j1 $kernel_packing KDEB_PKGVERSION=$REVISION LOCALVERSION="-${LINUXFAMILY}" \
 		KBUILD_DEBARCH=$ARCH ARCH=$ARCHITECTURE DEBFULLNAME="$MAINTAINER" DEBEMAIL="$MAINTAINERMAIL" CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" 2>&1' \
 		${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \

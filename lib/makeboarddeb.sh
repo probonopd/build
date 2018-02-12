@@ -36,7 +36,7 @@ create_board_package()
 	Provides: armbian-bsp
 	Conflicts: armbian-bsp
 	Suggests: armbian-config
-	Replaces: base-files, mpv, lightdm-gtk-greeter, armbian-tools-$RELEASE
+	Replaces: base-files, mpv, lightdm-gtk-greeter, chromium-browser, chromium, armbian-tools-$RELEASE
 	Recommends: bsdutils, parted, python3-apt, util-linux, toilet
 	Description: Armbian tweaks for $RELEASE on $BOARD ($BRANCH branch)
 	EOF
@@ -198,6 +198,10 @@ create_board_package()
 
 	# add some summary to the image
 	fingerprint_image "$destination/etc/armbian.txt"
+
+	# fixing permissions (basic), reference: dh_fixperms
+	find $destination -print0 2>/dev/null | xargs -0r chown --no-dereference 0:0
+	find $destination ! -type l -print0 2>/dev/null | xargs -0r chmod 'go=rX,u+rw,a-s'
 
 	# create board DEB file
 	display_alert "Building package" "$CHOSEN_ROOTFS" "info"

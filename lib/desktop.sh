@@ -16,12 +16,16 @@ install_desktop ()
 	# add loading desktop splash service
 	cp $SRC/packages/blobs/desktop/desktop-splash/desktop-splash.service $SDCARD/etc/systemd/system/desktop-splash.service
 
-	if [[ $RELEASE == xenial ]]; then
-		# install optimized firefox configuration
-		# cp $SRC/packages/blobs/desktop/firefox.conf $SDCARD/etc/firefox/syspref.js
-		# install optimized chromium configuration
-		cp $SRC/packages/blobs/desktop/chromium.conf $SDCARD/etc/chromium-browser/default
+	# install optimized firefox configuration
+	if [[ -d $SDCARD/usr/lib/firefox-esr/ ]]; then
+		cp $SRC/packages/blobs/desktop/firefox.conf $SDCARD/usr/lib/firefox-esr/mozilla.cfg
+		echo 'pref("general.config.obscure_value", 0);' > 			$SDCARD/usr/lib/firefox-esr/defaults/pref/local-settings.js
+		echo 'pref("general.config.filename", "mozilla.cfg");' >> 	$SDCARD/usr/lib/firefox-esr/defaults/pref/local-settings.js
 	fi
+
+	# install optimized chromium configuration
+	[[ -d $SDCARD/etc/chromium-browser ]] && cp $SRC/packages/blobs/desktop/chromium.conf $SDCARD/etc/chromium-browser/default
+	[[ -d $SDCARD/etc/chromium.d ]] && cp $SRC/packages/blobs/desktop/chromium.conf $SDCARD/etc/chromium.d/chromium.conf
 
 	# install default desktop settings
 	cp -R $SRC/packages/blobs/desktop/skel/. $SDCARD/etc/skel
@@ -62,8 +66,8 @@ install_desktop ()
 	# Enable network manager
 	if [[ -f $SDCARD/etc/NetworkManager/NetworkManager.conf ]]; then
 		sed "s/managed=\(.*\)/managed=true/g" -i $SDCARD/etc/NetworkManager/NetworkManager.conf
-		# Disable dns management withing NM
-		sed "s/\[main\]/\[main\]\ndns=none/g" -i $SDCARD/etc/NetworkManager/NetworkManager.conf
+		# Disable DNS management withing NM for !Stretch
+		[[ $RELEASE != stretch ]] && sed "s/\[main\]/\[main\]\ndns=none/g" -i $SDCARD/etc/NetworkManager/NetworkManager.conf
 		printf '[keyfile]\nunmanaged-devices=interface-name:p2p0\n' >> $SDCARD/etc/NetworkManager/NetworkManager.conf
 	fi
 
@@ -78,7 +82,7 @@ install_desktop ()
 
 	# install logo for login screen
 	cp $SRC/packages/blobs/desktop/icons/armbian.png $SDCARD/usr/share/pixmaps
-	cp -R $SRC/packages/blobs/desktop/lightdm $SDCARD/etc
+#	cp -R $SRC/packages/blobs/desktop/lightdm $SDCARD/etc
 
 	# Compile Turbo Frame buffer for sunxi
 	if [[ $LINUXFAMILY == sun* && $BRANCH == default ]]; then
@@ -94,7 +98,6 @@ install_desktop ()
 	echo "su -c 'hciattach /dev/ttyS1 any'" >> $SDCARD/etc/rc.local
 	echo "exit 0" >> $SDCARD/etc/rc.local
 	if [[ $BUILD_DESKTOP_DE != icewm  ]]; then
-#	    cp $SRC/cache/SRC/Test.mp4 $SDCARD/etc/skel/Desktop
 	    cp $SRC/cache/SRC/Test* $SDCARD/etc/skel/Desktop
 	fi
 

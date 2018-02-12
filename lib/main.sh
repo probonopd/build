@@ -22,7 +22,7 @@ umask 002
 # destination
 DEST=$SRC/output
 
-# SOURCES
+# SOURCES add 20170101
 SOURCES=$SRC/cache/sources
 
 TTY_X=$(($(stty size | awk '{print $2}')-6)) # determine terminal width
@@ -269,7 +269,7 @@ fi
 
 if [[ $BETA == yes ]]; then
 	IMAGE_TYPE=nightly
-elif [[ $BETA == no && $BUILD_ALL == yes && -n $GPG_PASS ]]; then
+elif [[ $BETA != "yes" && $BUILD_ALL == yes && -n $GPG_PASS ]]; then
 	IMAGE_TYPE=stable
 else
 	IMAGE_TYPE=user-built

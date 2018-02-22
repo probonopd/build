@@ -54,8 +54,10 @@ install_desktop ()
 	fi
 
 	# Adjust menu
-	sed -i '0,/xfce4-about.desktop/s//armbian-donate.desktop/' $SDCARD/etc/xdg/menus/xfce-applications.menu
-	sed -i '/armbian-donate.desktop/a \\t<Filename>armbian-support.desktop</Filename>/' $SDCARD/etc/xdg/menus/xfce-applications.menu
+	if [[ "${DE}" == "xfce" ]]; then
+		sed -i '0,/xfce4-about.desktop/s//armbian-donate.desktop/' $SDCARD/etc/xdg/menus/xfce-applications.menu
+		sed -i '/armbian-donate.desktop/a \\t<Filename>armbian-support.desktop</Filename>/' $SDCARD/etc/xdg/menus/xfce-applications.menu
+	fi
 
 	# Hide few items
 	[[ -f $SDCARD/usr/share/applications/display-im6.q16.desktop ]] && mv $SDCARD/usr/share/applications/display-im6.q16.desktop $SDCARD/usr/share/applications/display-im6.q16.desktop.hidden

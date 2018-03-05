@@ -9,22 +9,22 @@ build_amremote()
 	[[ -d "$SOURCES/$plugin_dir" && -n "$SOURCES$plugin_dir" ]] && rm -rf $SOURCES/$plugin_dir
 	fetch_from_repo "$plugin_repo" "$plugin_dir" "branch:aml-amremote-905"
 	rm -R $SOURCES/$plugin_dir/.git
-	cd $SOURCES/$plugin_dir
+#	cd $SOURCES/$plugin_dir
 
 	# set up control file
-	mkdir -p DEBIAN
-	cat <<-END > DEBIAN/control
-	Package: aml-amremote-905
-	Version: $REVISION
-	Architecture: $ARCH
-	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
-	Installed-Size: 1
-	Provides: aml-amremote-905
-	Conflicts: aml-amremote-905
-	Section: kernel
-	Priority: optional
-	Description: IR amremote S905
-	END
+#	mkdir -p DEBIAN
+#	cat <<-END > DEBIAN/control
+#	Package: aml-amremote-905
+#	Version: $REVISION
+#	Architecture: $ARCH
+#	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
+#	Installed-Size: 1
+#	Provides: aml-amremote-905
+#	Conflicts: aml-amremote-905
+#	Section: kernel
+#	Priority: optional
+#	Description: IR amremote S905
+#	END
 
 	cd $SOURCES
 	# pack

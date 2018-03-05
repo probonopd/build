@@ -1,7 +1,7 @@
 new file mode 100666
 --- /dev/null
 +++ ./arch/arm/boot/dts/meson8m2-mxiii-plus.dts
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,304 @@
 +/*
 + * Copyright (c) 2017 Martin Blumenstingl <martin.blumenstingl@googlemail.com>.
 + *
@@ -52,17 +52,17 @@ new file mode 100666
 +		io-channels = <&saradc 8>;
 +	};
 +
-+	pwmleds {
-+		compatible = "pwm-leds";
-+
-+		power {
-+			label = "m8s:blue:power";
-+			pwms = <&pwm_ef 1 7812500 0>;
-+			max-brightness = <255>;
-+			active-low;
-+			linux,default-trigger = "default-on";
-+		};
-+	};
++//	pwmleds {
++//		compatible = "pwm-leds";
++//
++//		power {
++//			label = "m8s:blue:power";
++//			pwms = <&pwm_ef 1 7812500 0>;
++//			max-brightness = <255>;
++//			active-low;
++//			linux,default-trigger = "default-on";
++//		};
++//	};
 +
 +	sdio_pwrseq: sdio-pwrseq {
 +		compatible = "mmc-pwrseq-simple";
@@ -70,6 +70,16 @@ new file mode 100666
 +				<&gpio GPIOX_11 GPIO_ACTIVE_HIGH>;
 +		clocks = <&wifi32k>;
 +		clock-names = "ext_clock";
++	};
++
++	tv-connector {
++		compatible = "composite-video-connector";
++
++		port {
++			cvbs_connector_in: endpoint {
++				remote-endpoint = <&cvbs_vdac_out>;
++			};
++		};
 +	};
 +
 +	vcc_1v8: regulator-vcc1v8 {
@@ -92,20 +102,12 @@ new file mode 100666
 +		clock-frequency = <32768>;
 +		pwms = <&pwm_ef 0 30518 0>; /* PWM_E at 32.768KHz */
 +	};
++};
 +
-+/* 20171228
-+	usb_vbus: regulator-usb0-vbus {
-+		compatible = "regulator-fixed";
-+		regulator-name = "USB0_VBUS";
-+
-+		regulator-min-microvolt = <5000000>;
-+		regulator-max-microvolt = <5000000>;
-+
-+		gpio = <&gpio GPIOZ_1 GPIO_ACTIVE_HIGH>;
-+		enable-active-high;
++&cvbs_vdac_port {
++	cvbs_vdac_out: endpoint {
++		remote-endpoint = <&cvbs_connector_in>;
 +	};
-+*/
-+
 +};
 +
 +&ethmac {
@@ -129,6 +131,9 @@ new file mode 100666
 +		eth_phy0: ethernet-phy@0 {
 +			/* IC Plus IP101GR (0x02430c54) */
 +			reg = <0>;
++			interrupt-parent = <&gpio_intc>;
++			/* TODO: check if the PHY interrupt pin is routed to GPIOH_5 */
++			interrupts = <34 IRQ_TYPE_LEVEL_LOW>;
 +		};
 +	};
 +};
@@ -269,7 +274,14 @@ new file mode 100666
 +
 +	bluetooth {
 +		compatible = "realtek,rtl8723bs-bluetooth";
-+		disable-gpios = <&gpio GPIOX_20 GPIO_ACTIVE_LOW>;
++		enable-gpios = <&gpio GPIOX_20 GPIO_ACTIVE_HIGH>;
++		realtek,config-data = /bits/ 8 <
++			0x55 0xab 0x23 0x87 0x31 0x00 0xf4 0x00 0x08 0x01 0x00 0x00
++			0x00 0x05 0x50 0x00 0x00 0x0c 0x00 0x10 0x02 0x80 0x92 0x04
++			0x50 0xc5 0xea 0x19 0xe1 0x1b 0xf1 0xaf 0x5f 0x01 0xa4 0x0b
++			0x27 0x00 0x01 0x63 0xfe 0x00 0x01 0x01 0x5b 0x01 0x04 0x0b
++			0x0b 0x0b 0x0a 0xe3 0x01 0x01 0x00
++		>;
 +	};
 +};
 +
@@ -289,7 +301,6 @@ new file mode 100666
 +
 +&usb0_phy {
 +	status = "okay";
-+//	phy-supply = <&usb_vbus>;
 +};
 +
 +&usb1_phy {

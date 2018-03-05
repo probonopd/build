@@ -10,22 +10,22 @@ build_aml_mali6()
 	[[ -d "$SOURCES/$plugin_dir" && -n "$SOURCES$plugin_dir" ]] && rm -rf $SOURCES/$plugin_dir
 	fetch_from_repo "$plugin_repo" "$plugin_dir" "branch:aml-mali6"
 	rm -R $SOURCES/$plugin_dir/.git
-	cd $SOURCES/$plugin_dir
+#	cd $SOURCES/$plugin_dir
 
 	# set up control file
-	mkdir -p DEBIAN
-	cat <<-END > DEBIAN/control
-	Package: aml-mali6
-	Version: $REVISION
-	Architecture: $ARCH
-	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
-	Installed-Size: 1
-	Provides: aml-mali6
-	Conflicts: aml-mali6
-	Section: kernel
-	Priority: optional
-	Description: lib mali6
-	END
+#	mkdir -p DEBIAN
+#	cat <<-END > DEBIAN/control
+#	Package: aml-mali6
+#	Version: $REVISION
+#	Architecture: $ARCH
+#	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
+#	Installed-Size: 1
+#	Provides: aml-mali6
+#	Conflicts: aml-mali6
+#	Section: kernel
+#	Priority: optional
+#	Description: lib mali6
+#	END
 
 	cd $SOURCES
 	# pack

@@ -127,15 +127,14 @@ PACKAGE_LIST_ADDITIONAL="alsa-utils btrfs-tools dosfstools hddtemp iotop iozone3
 	libpam-systemd iperf3 software-properties-common libnss-myhostname f2fs-tools avahi-autoipd iputils-arping"
 
 PACKAGE_LIST_DESKTOP="xserver-xorg xserver-xorg-video-fbdev gvfs-backends gvfs-fuse xfonts-base xinit x11-xserver-utils xterm thunar-volman \
-	gksu bluetooth \
-	network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
-	paman pavumeter pulseaudio-module-gconf bluez bluez-tools pulseaudio-module-bluetooth blueman libgl1-mesa-dri gparted synaptic \
-	policykit-1 profile-sync-daemon mesa-utils"
+	gksu network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit \
+	libgl1-mesa-dri gparted synaptic policykit-1 profile-sync-daemon mesa-utils"
 
 PACKAGE_LIST_OFFICE="lxtask mirage galculator hexchat mpv \
 	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl \
-	network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit pasystray pavucontrol pulseaudio \
-	libpam-gnome-keyring thunderbird system-config-printer-common numix-gtk-theme paprefs tango-icon-theme \
+	network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit \
+	libpam-gnome-keyring thunderbird system-config-printer-common numix-gtk-theme \
+	bluetooth pasystray paman pavumeter pulseaudio-module-gconf bluez bluez-tools pulseaudio-module-bluetooth blueman paprefs pavucontrol pulseaudio \
 	libreoffice-writer libreoffice-style-tango libreoffice-gtk fbi cups-pk-helper cups"
 
 #case $DISPLAY_MANAGER in
@@ -163,7 +162,7 @@ case $BUILD_DESKTOP_DE in
 	;;
 	mate)
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP $PACKAGE_LIST_OFFICE"
-	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets mozo"
+	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-desktop-environment-extras mate-media mate-screensaver mate-utils mate-power-manager mate-applets mozo tango-icon-theme"
 	;;
 esac
 
@@ -176,13 +175,13 @@ case $RELEASE in
 	xenial)
 	PACKAGE_LIST_RELEASE="man-db nano linux-firmware zram-config"
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium-browser"
-	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP language-selector-gnome paprefs numix-gtk-theme system-config-printer-common system-config-printer-gnome ubuntu-mate-lightdm-theme"
+	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP language-selector-gnome numix-gtk-theme system-config-printer-common system-config-printer-gnome ubuntu-mate-lightdm-theme"
 	[[ $ARCH == armhf ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP mate-utils ubuntu-mate-welcome mate-settings-daemon"
 	;;
 	stretch)
 	PACKAGE_LIST_RELEASE="man-db less kbd net-tools netcat-openbsd gnupg2 dirmngr"
 	PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP thunderbird chromium dbus-x11"
-	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP  paprefs numix-gtk-theme system-config-printer-common system-config-printer"
+	[[ $BUILD_DESKTOP_DE != icewm  ]] && PACKAGE_LIST_DESKTOP="$PACKAGE_LIST_DESKTOP numix-gtk-theme system-config-printer-common system-config-printer"
 	;;
 esac
 

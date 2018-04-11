@@ -10,7 +10,7 @@
 # common options
 # daily beta build contains date in subrevision
 if [[ $BETA == yes && -z $SUBREVISION ]]; then SUBREVISION="."$(date --date="tomorrow" +"%y%m%d"); fi
-REVISION="5.41$SUBREVISION" # all boards have same revision
+REVISION="5.41.1$SUBREVISION" # all boards have same revision
 ROOTPWD="1234" # Must be changed @first login
 MAINTAINER="Igor Pecovnik" # deb signature
 MAINTAINERMAIL="igor.pecovnik@****l.com" # deb signature
@@ -76,6 +76,7 @@ if [[ -f $SRC/userpatches/sources/$LINUXFAMILY.conf ]]; then
 fi
 
 [[ $RELEASE == stretch && $CAN_BUILD_STRETCH != yes ]] && exit_with_error "Building Debian Stretch images with selected kernel is not supported"
+[[ $RELEASE == bionic && $CAN_BUILD_STRETCH != yes ]] && exit_with_error "Building Ubuntu Bionic images with selected kernel is not supported"
 
 [[ -n $ATFSOURCE && -z $ATF_USE_GCC ]] && exit_with_error "Error in configuration: ATF_USE_GCC is unset"
 [[ -z $UBOOT_USE_GCC ]] && exit_with_error "Error in configuration: UBOOT_USE_GCC is unset"
@@ -118,7 +119,7 @@ PACKAGE_LIST="bc bridge-utils build-essential cpufrequtils device-tree-compiler 
 	ca-certificates resolvconf expect rcconf iptables mc abootimg wget"
 
 # development related packages. remove when they are not needed for building packages in chroot
-PACKAGE_LIST="$PACKAGE_LIST automake libwrap0-dev libssl-dev libnl-3-dev libnl-genl-3-dev"
+PACKAGE_LIST="$PACKAGE_LIST automake bison flex libwrap0-dev libssl-dev libnl-3-dev libnl-genl-3-dev"
 
 # Non-essential packages
 PACKAGE_LIST_ADDITIONAL="alsa-utils btrfs-tools dosfstools hddtemp iotop iozone3 stress sysbench screen ntfs-3g vim pciutils \

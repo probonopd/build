@@ -12,8 +12,8 @@
 if [[ $BETA == yes && -z $SUBREVISION ]]; then SUBREVISION="."$(date --date="tomorrow" +"%y%m%d"); fi
 REVISION="5.41.1$SUBREVISION" # all boards have same revision
 ROOTPWD="1234" # Must be changed @first login
-MAINTAINER="Igor Pecovnik" # deb signature
-MAINTAINERMAIL="igor.pecovnik@****l.com" # deb signature
+MAINTAINER="Oleg Ivanov" # deb signature
+MAINTAINERMAIL="balbes-150@yandex.ru" # deb signature
 TZDATA=`cat /etc/timezone` # Timezone for target is taken from host or defined here.
 USEALLCORES=yes # Use all CPU cores for compiling
 EXIT_PATCHING_ERROR="" # exit patching if failed
@@ -135,7 +135,7 @@ PACKAGE_LIST_OFFICE="lxtask mirage galculator hexchat mpv \
 	gtk2-engines gtk2-engines-murrine gtk2-engines-pixbuf libgtk2.0-bin gcj-jre-headless libgnome2-perl \
 	network-manager-gnome network-manager-openvpn-gnome gnome-keyring gcr libgck-1-0 libgcr-3-common p11-kit \
 	libpam-gnome-keyring thunderbird system-config-printer-common numix-gtk-theme \
-	bluetooth pasystray paman pavumeter pulseaudio-module-gconf bluez bluez-tools pulseaudio-module-bluetooth blueman paprefs pavucontrol pulseaudio \
+	bluetooth bluez bluez-tools blueman \
 	libreoffice-writer libreoffice-style-tango libreoffice-gtk fbi cups-pk-helper cups"
 
 #case $DISPLAY_MANAGER in

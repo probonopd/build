@@ -42,6 +42,7 @@ cleaning()
 				-name "${CHOSEN_KERNEL/image/source}_*.deb" -o \
 				-name "${CHOSEN_KERNEL/image/firmware-image}_*.deb" \) -delete
 			[[ -n $RELEASE ]] && rm -f $DEST/debs/$RELEASE/${CHOSEN_ROOTFS}_*.deb
+			[[ -n $RELEASE ]] && rm -f $DEST/debs/$RELEASE/armbian-desktop-${RELEASE}_*.deb
 		fi
 		;;
 
@@ -140,12 +141,12 @@ create_sources_list()
 	#deb-src http://security.debian.org/ ${release}/updates main contrib non-free
 
 	# add test repo
-#	deb http://ftp.de.debian.org/debian testing main
+	#deb http://ftp.de.debian.org/debian testing main contrib non-free
 
 	EOF
 	;;
 
-	xenial)
+	xenial|bionic)
 	cat <<-EOF > $basedir/etc/apt/sources.list
 	deb http://${UBUNTU_MIRROR} $release main restricted universe multiverse
 	#deb-src http://${UBUNTU_MIRROR} $release main restricted universe multiverse
@@ -348,7 +349,7 @@ addtorepo()
 # parameter "delete" remove incoming directory if publishing is succesful
 # function: cycle trough distributions
 
-	local distributions=("jessie" "xenial" "stretch")
+	local distributions=("jessie" "xenial" "stretch" "bionic")
 	local errors=0
 
 	for release in "${distributions[@]}"; do
@@ -507,6 +508,17 @@ prepare_host()
 		exit_with_error "Running this tool on non x86-x64 build host in not supported"
 	fi
 
+	# exit if package manager is running in the back
+	while true; do
+		fuser -s /var/lib/dpkg/lock
+		if [[ $? = 0 ]]; then
+				display_alert "Package manager is running in the background." "retrying in 30 sec" "wrn"
+				sleep 30
+			else
+				break
+		fi
+	done
+
 	# need lsb_release to decide what to install
 	if [[ $(dpkg-query -W -f='${db:Status-Abbrev}\n' lsb-release 2>/dev/null) != *ii* ]]; then
 		display_alert "Installing package" "lsb-release"
@@ -578,17 +590,29 @@ prepare_host()
 		echo "deb http://repo.aptly.info/ squeeze main" > /etc/apt/sources.list.d/aptly.list
 	fi
 
+	if [[ ${#deps[@]} -gt 0 ]]; then
+		display_alert "Installing build dependencies"
+		apt -q update
+#		apt -y upgrade
+		apt -q -y --no-install-recommends install "${deps[@]}" | tee -a $DEST/debug/hostdeps.log
+		update-ccache-symlinks
+	fi
+
+	# add bionic repository and install more recent qemu and debootstrap
+	if [[ ! -f /etc/apt/sources.list.d/bionic.list && $codename == "xenial" ]]; then
+		echo "deb http://us.archive.ubuntu.com/ubuntu/ bionic main restricted universe" > /etc/apt/sources.list.d/bionic.list
+		echo "Package: *" > /etc/apt/preferences.d/bionic.pref
+		echo "Pin: release n=bionic" >> /etc/apt/preferences.d/bionic.pref
+		echo "Pin-Priority: -10" >> /etc/apt/preferences.d/bionic.pref
+		apt -q update
+#		apt -y upgrade
+		apt -t bionic -y --no-install-recommends install qemu-user-static debootstrap binfmt-support
+	fi
+
 	# sync clock
 	if [[ $SYNC_CLOCK != no ]]; then
 		display_alert "Syncing clock" "host" "info"
 		ntpdate -s ${NTP_SERVER:- time.ijs.si}
-	fi
-
-	if [[ ${#deps[@]} -gt 0 ]]; then
-		display_alert "Installing build dependencies"
-		apt -q update
-		apt -q -y --no-install-recommends install "${deps[@]}" | tee -a $DEST/debug/hostdeps.log
-		update-ccache-symlinks
 	fi
 
 	if [[ $(dpkg-query -W -f='${db:Status-Abbrev}\n' 'zlib1g:i386' 2>/dev/null) != *ii* ]]; then

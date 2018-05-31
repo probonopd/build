@@ -39,4 +39,4 @@ build_mali_aml()
 
 # install mali by default
 display_alert "Installing mali-aml-8xx" "$REVISION" "info"
-chroot $SDCARD /bin/bash -c "dpkg -i /tmp/debs/mali-aml-8xx_${REVISION}_${ARCH}.deb" >> $DEST/debug/install.log
+install_deb_chroot "$DEST/debs/mali-aml-8xx_${REVISION}_${ARCH}.deb"  >> $DEST/debug/install.log

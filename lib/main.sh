@@ -189,7 +189,7 @@ if [[ -z $BRANCH ]]; then
 	options=()
 	[[ $KERNEL_TARGET == *default* ]] && options+=("default" "Vendor provided / legacy (3.4.x - 4.4.x)")
 	[[ $KERNEL_TARGET == *next* ]] && options+=("next"       "Mainline (@kernel.org)   (4.x)")
-	[[ $KERNEL_TARGET == *dev* && $EXPERT=yes ]] && options+=("dev"         "\Z1Development version      (4.x)\Zn")
+	[[ $KERNEL_TARGET == *dev* && $EXPERT = yes ]] && options+=("dev"         "\Z1Development version      (4.x)\Zn")
 	# do not display selection dialog if only one kernel branch is available
 	if [[ "${#options[@]}" == 2 ]]; then
 		BRANCH="${options[0]}"
@@ -210,6 +210,7 @@ if [[ $KERNEL_ONLY != yes && -z $RELEASE ]]; then
 	options+=("jessie" "Debian 8 Jessie")
 	options+=("stretch" "Debian 9 Stretch")
 	options+=("xenial" "Ubuntu Xenial 16.04 LTS")
+	options+=("bionic" "Ubuntu Bionic 18.04 LTS")
 	RELEASE=$(dialog --stdout --title "Choose a release" --backtitle "$backtitle" --menu "Select the target OS release" \
 		$TTY_Y $TTY_X $(($TTY_Y - 8)) "${options[@]}")
 	unset options
@@ -290,6 +291,7 @@ DEB_BRANCH=${DEB_BRANCH:+${DEB_BRANCH}-}
 CHOSEN_UBOOT=linux-u-boot-${DEB_BRANCH}${BOARD}
 CHOSEN_KERNEL=linux-image-${DEB_BRANCH}${LINUXFAMILY}
 CHOSEN_ROOTFS=linux-${RELEASE}-root-${DEB_BRANCH}${BOARD}
+CHOSEN_DESKTOP=armbian-${RELEASE}-desktop-${BUILD_DESKTOP_DE}
 CHOSEN_KSRC=linux-source-${BRANCH}-${LINUXFAMILY}
 
 for option in $(tr ',' ' ' <<< "$CLEAN_LEVEL"); do
@@ -319,7 +321,9 @@ VER="${VER/-$LINUXFAMILY/}"
 [[ -n $RELEASE && ! -f $DEST/debs/$RELEASE/${CHOSEN_ROOTFS}_${REVISION}_${ARCH}.deb ]] && create_board_package
 
 # create desktop package
-[[ -n $RELEASE && ! -f $DEST/debs/$RELEASE/armbian-desktop-${RELEASE}_${REVISION}_all.deb ]] && create_desktop_package
+if [[ $KERNEL_ONLY != yes && $BUILD_DESKTOP = yes ]]; then
+    [[ -n $RELEASE && ! -f $DEST/debs/$RELEASE/${CHOSEN_DESKTOP}_${REVISION}_all.deb ]] && create_desktop_package
+fi
 
 # build additional packages
 [[ $EXTERNAL_NEW == compile ]] && chroot_build_packages

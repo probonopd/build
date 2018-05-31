@@ -24,8 +24,10 @@ install_desktop ()
 	fi
 
 	# install optimized chromium configuration
-	[[ -d $SDCARD/etc/chromium-browser ]] && cp $SRC/packages/blobs/desktop/chromium.conf $SDCARD/etc/chromium-browser/default
-	[[ -d $SDCARD/etc/chromium.d ]] && cp $SRC/packages/blobs/desktop/chromium.conf $SDCARD/etc/chromium.d/chromium.conf
+	if [[ $RELEASE != bionic ]]; then
+		[[ -d $SDCARD/etc/chromium-browser ]] && cp $SRC/packages/blobs/desktop/chromium.conf $SDCARD/etc/chromium-browser/default
+		[[ -d $SDCARD/etc/chromium.d ]] && cp $SRC/packages/blobs/desktop/chromium.conf $SDCARD/etc/chromium.d/chromium.conf
+	fi
 
 	# install default desktop settings
 	cp -R $SRC/packages/blobs/desktop/skel/. $SDCARD/etc/skel

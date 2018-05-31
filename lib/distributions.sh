@@ -48,6 +48,9 @@ install_common()
 
 	mkdir -p $SDCARD/selinux
 
+	# remove Ubuntu's legal text
+	[[ -f $SDCARD/etc/legal ]] && rm $SDCARD/etc/legal
+
 	# console fix due to Debian bug
 	sed -e 's/CHARMAP=".*"/CHARMAP="'$CONSOLE_CHAR'"/g' -i $SDCARD/etc/default/console-setup
 
@@ -66,7 +69,7 @@ install_common()
 	# NOTE: this needs to be executed before family_tweaks
 	local bootscript_src=${BOOTSCRIPT%%:*}
 	local bootscript_dst=${BOOTSCRIPT##*:}
-	cp $SRC/config/bootscripts/$bootscript_src $SDCARD/boot/$bootscript_dst
+#	cp $SRC/config/bootscripts/$bootscript_src $SDCARD/boot/$bootscript_dst
 
 	[[ -n $BOOTENV_FILE && -f $SRC/config/bootenv/$BOOTENV_FILE ]] && \
 		cp $SRC/config/bootenv/$BOOTENV_FILE $SDCARD/boot/armbianEnv.txt
@@ -129,7 +132,9 @@ install_common()
 	install_deb_chroot "$DEST/debs/${CHOSEN_KERNEL}_${REVISION}_${ARCH}.deb"
 
 #	display_alert "Installing u-boot" "$CHOSEN_UBOOT" "info"
-	install_deb_chroot "$DEST/debs/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb"
+	if [[ -f $DEST/debs/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb ]]; then
+		install_deb_chroot "$DEST/debs/${CHOSEN_UBOOT}_${REVISION}_${ARCH}.deb"
+	fi
 
 	if [[ $INSTALL_HEADERS == yes ]]; then
 		install_deb_chroot "$DEST/debs/${CHOSEN_KERNEL/image/headers}_${REVISION}_${ARCH}.deb"
@@ -157,9 +162,15 @@ install_common()
 			linux-u-boot-${BOARD}-${BRANCH} ${CHOSEN_KERNEL/image/dtb}" >> $DEST/debug/install.log 2>&1
 	fi
 
+#	if [[ $BUILD_DESKTOP == yes ]]; then
+#		install_deb_chroot "$DEST/debs/$RELEASE/armbian-${RELEASE}-desktop_${REVISION}_all.deb"
+#		# install display manager
+#		desktop_postinstall
+#	fi
+
 	# copy boot splash images
-	cp $SRC/packages/blobs/splash/armbian-u-boot.bmp $SDCARD/boot/boot.bmp
-	cp $SRC/packages/blobs/splash/armbian-desktop.png $SDCARD/boot/boot-desktop.png
+###	cp $SRC/packages/blobs/splash/armbian-u-boot.bmp $SDCARD/boot/boot.bmp
+###	cp $SRC/packages/blobs/splash/armbian-desktop.png $SDCARD/boot/boot-desktop.png
 
 	# execute $LINUXFAMILY-specific tweaks
 	[[ $(type -t family_tweaks) == function ]] && family_tweaks
@@ -205,9 +216,21 @@ install_common()
 	# save initial armbian-release state
 	cp $SDCARD/etc/armbian-release $SDCARD/etc/armbian-image-release
 
+	# DNS fix. package resolvconf is not available everywhere
+	if [ -d /etc/resolvconf/resolv.conf.d ]; then
+		echo 'nameserver 8.8.8.8' > $SDCARD/etc/resolvconf/resolv.conf.d/head
+	fi
+
 	# premit root login via SSH for the first boot
 	sed -i 's/#\?PermitRootLogin .*/PermitRootLogin yes/' $SDCARD/etc/ssh/sshd_config
 
+	# enable PubkeyAuthentication. Enabled by default everywhere except on Jessie
+	sed -i 's/#\?PubkeyAuthentication .*/PubkeyAuthentication yes/' $SDCARD/etc/ssh/sshd_config
+
+	# configure network manager
+	sed "s/managed=\(.*\)/managed=true/g" -i $SDCARD/etc/NetworkManager/NetworkManager.conf
+	# disable DNS management withing NM for !Stretch
+	[[ $RELEASE != stretch ]] && sed "s/\[main\]/\[main\]\ndns=none/g" -i $SDCARD/etc/NetworkManager/NetworkManager.conf
 	if [[ -n $NM_IGNORE_DEVICES ]]; then
 		mkdir -p $SDCARD/etc/NetworkManager/conf.d/
 		cat <<-EOF > $SDCARD/etc/NetworkManager/conf.d/10-ignore-interfaces.conf
@@ -254,6 +277,36 @@ install_distribution_specific()
 		exit 0
 		EOF
 		chmod +x $SDCARD/etc/rc.local
+		;;
+	bionic)
+		# remove doubled uname from motd
+		[[ -f $SDCARD/etc/update-motd.d/10-uname ]] && rm $SDCARD/etc/update-motd.d/10-uname
+		# remove motd news from motd.ubuntu.com
+		[[ -f $SDCARD/etc/default/motd-news ]] && sed -i "s/^ENABLED=.*/ENABLED=0/" $SDCARD/etc/default/motd-news
+		# rc.local is not existing in bionic but we might need it
+		cat <<-EOF > $SDCARD/etc/rc.local
+		#!/bin/sh -e
+		#
+		# rc.local
+		#
+		# This script is executed at the end of each multiuser runlevel.
+		# Make sure that the script will "exit 0" on success or any other
+		# value on error.
+		#
+		# In order to enable or disable this script just change the execution
+		# bits.
+		#
+		# By default this script does nothing.
+
+		exit 0
+		EOF
+		chmod +x $SDCARD/etc/rc.local
+		# Basic Netplan config. Let NetworkManager manage all devices on this system
+		cat <<-EOF > $SDCARD/etc/netplan/armbian-default.yaml
+		network:
+		  version: 2
+		  renderer: NetworkManager
+		EOF
 		;;
 	esac
 }

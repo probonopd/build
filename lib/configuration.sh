@@ -223,8 +223,17 @@ PACKAGE_LIST="$PACKAGE_LIST $PACKAGE_LIST_RELEASE $PACKAGE_LIST_ADDITIONAL"
 [[ $BUILD_DESKTOP == yes ]] && PACKAGE_LIST="$PACKAGE_LIST $PACKAGE_LIST_DESKTOP"
 
 # remove any packages defined in PACKAGE_LIST_RM in lib.config
+#if [[ -n $PACKAGE_LIST_RM ]]; then
+#	PACKAGE_LIST=$(sed -r "s/\b($(tr ' ' '|' <<< $PACKAGE_LIST_RM))\b//g" <<< $PACKAGE_LIST)
+#fi
+
+# remove any packages defined in PACKAGE_LIST_RM in lib.config
 if [[ -n $PACKAGE_LIST_RM ]]; then
-	PACKAGE_LIST=$(sed -r "s/\b($(tr ' ' '|' <<< $PACKAGE_LIST_RM))\b//g" <<< $PACKAGE_LIST)
+        SED_TASK=""
+        for PACKAGE_RM in $PACKAGE_LIST_RM; do
+                SED_TASK+="|\s${PACKAGE_RM}\s"
+        done
+        PACKAGE_LIST=$(sed -r "s/${SED_TASK:1}/ /g" <<< " $PACKAGE_LIST ")
 fi
 
 # debug

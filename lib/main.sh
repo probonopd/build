@@ -229,7 +229,7 @@ if [[ $KERNEL_ONLY != yes && -z $BUILD_DESKTOP ]]; then
 fi
 
 # options DE
-if [[ $KERNEL_ONLY != yes && $BUILD_DESKTOP = yes ]]; then
+if [[ $KERNEL_ONLY != yes && $BUILD_DESKTOP = yes && -z $BUILD_DESKTOP_DE ]]; then
 	options=()
 	options+=("xfce" "Image with desktop XFCE")
 	options+=("mate" "Image with desktop MATE")

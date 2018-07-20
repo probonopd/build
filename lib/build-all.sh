@@ -7,19 +7,6 @@
 # This file is a part of the Armbian build script
 # https://github.com/armbian/build/
 
-# Include here to make "display_alert" and "prepare_host" available
-source $SRC/lib/general.sh
-
-# Script parameters handling
-for i in "$@"; do
-	if [[ $i == *=* ]]; then
-		parameter=${i%%=*}
-		value=${i##*=}
-		display_alert "Command line: setting $parameter to" "${value:-(empty)}" "info"
-		eval $parameter=$value
-	fi
-done
-
 FORCEDRELEASE=$RELEASE
 
 # when we want to build from certain start
@@ -28,7 +15,7 @@ FORCEDRELEASE=$RELEASE
 
 rm -rf /run/armbian
 mkdir -p /run/armbian
-RELEASE_LIST=("xenial" "jessie" "stretch")
+RELEASE_LIST=("xenial" "jessie" "stretch" "bionic")
 BRANCH_LIST=("default" "next" "dev")
 
 pack_upload ()
@@ -84,15 +71,20 @@ create_images_list()
 	#
 	# if parameter is true, than we build beta list
 	#
-local naming="$SRC/config/boards/*.conf";
+	local naming="$SRC/config/boards/*.conf";
         if [[ "$EXPERT" == "yes" ]]; then naming=$naming" $SRC/config/boards/*.wip"; fi
+
 	for board in $naming; do
 		BOARD=$(basename $board | cut -d'.' -f1)
 		local file="${SRC}/config/boards/${BOARD}"
 		if [[ -f $file".conf" ]]; then source $file".conf"; fi
 		if [[ -f $file".wip"  ]]; then source $file".wip"; fi
 
-
+		# beta targets are the same as stable. To build the same set beta set as future stable.
+		if [[ "$MERGETARGETS" == "yes" ]]; then
+			CLI_BETA_TARGET=$CLI_TARGET
+			DESKTOP_BETA_TARGET=$DESKTOP_TARGET
+		fi
 
 		if [[ -n $CLI_TARGET && -z $1 ]]; then
 
@@ -215,7 +207,7 @@ for line in "${buildlist[@]}"; do
 		CPUMIN CPUMAX UBOOT_VER KERNEL_VER GOVERNOR BOOTSIZE BOOTFS_TYPE UBOOT_TOOLCHAIN KERNEL_TOOLCHAIN PACKAGE_LIST_EXCLUDE KERNEL_IMAGE_TYPE \
 		write_uboot_platform family_tweaks family_tweaks_bsp setup_write_uboot_platform uboot_custom_postprocess atf_custom_postprocess family_tweaks_s \
 		BOOTSCRIPT UBOOT_TARGET_MAP LOCALVERSION UBOOT_COMPILER KERNEL_COMPILER BOOTCONFIG BOOTCONFIG_VAR_NAME BOOTCONFIG_DEFAULT BOOTCONFIG_NEXT BOOTCONFIG_DEV \
-		MODULES MODULES_NEXT MODULES_DEV INITRD_ARCH HAS_UUID_SUPPORT BOOTENV_FILE BOOTDELAY MODULES_BLACKLIST MODULES_BLACKLIST_NEXT \
+		MODULES MODULES_NEXT MODULES_DEV INITRD_ARCH BOOTENV_FILE BOOTDELAY MODULES_BLACKLIST MODULES_BLACKLIST_NEXT ATF_TOOLCHAIN2 \
 		MODULES_BLACKLIST_DEV MOUNT SDCARD BOOTPATCHDIR KERNELPATCHDIR buildtext RELEASE IMAGE_TYPE OVERLAY_PREFIX ASOUND_STATE \
 		ATF_COMPILER ATF_USE_GCC ATFSOURCE ATFDIR ATFBRANCH ATFSOURCEDIR PACKAGE_LIST_RM NM_IGNORE_DEVICES DISPLAY_MANAGER family_tweaks_bsp_s
 

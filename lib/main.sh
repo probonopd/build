@@ -207,7 +207,7 @@ fi
 
 if [[ $KERNEL_ONLY != yes && -z $RELEASE ]]; then
 	options=()
-	options+=("jessie" "Debian 8 Jessie")
+#	options+=("jessie" "Debian 8 Jessie")
 	options+=("stretch" "Debian 9 Stretch")
 	options+=("xenial" "Ubuntu Xenial 16.04 LTS")
 	options+=("bionic" "Ubuntu Bionic 18.04 LTS")
@@ -218,18 +218,18 @@ if [[ $KERNEL_ONLY != yes && -z $RELEASE ]]; then
 fi
 
 if [[ $KERNEL_ONLY != yes && -z $BUILD_DESKTOP ]]; then
-	BUILD_DESKTOP_DE="server"
 	options=()
 	options+=("no" "Image with console interface (server)")
 	options+=("yes" "Image with desktop environment")
 	BUILD_DESKTOP=$(dialog --stdout --title "Choose image type" --backtitle "$backtitle" --no-tags --menu "Select the target image type" \
 		$TTY_Y $TTY_X $(($TTY_Y - 8)) "${options[@]}")
+	[[ $BUILD_DESKTOP = no ]] && BUILD_DESKTOP_DE="server"
 	unset options
 	[[ -z $BUILD_DESKTOP ]] && exit_with_error "No option selected"
 fi
 
 # options DE
-if [[ $KERNEL_ONLY != yes && $BUILD_DESKTOP = yes ]]; then
+if [[ $KERNEL_ONLY != yes && $BUILD_DESKTOP = yes && -z $BUILD_DESKTOP_DE ]]; then
 	options=()
 	options+=("xfce" "Image with desktop XFCE")
 	options+=("mate" "Image with desktop MATE")
